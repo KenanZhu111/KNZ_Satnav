@@ -167,9 +167,9 @@
 
                 pxyz2blh tem2 = NULL;
                 tem2 = (pxyz2blh)malloc(sizeof(pxyz2blh));
-                XYZtoBLH( tem2, obs_h->apX, obs_h->apY, obs_h->apZ, a, e2);
-                station->B = tem2->B;
-                station->L = tem2->L;
+                tem2 = XYZtoBLH( tem2, obs_h->apX, obs_h->apY, obs_h->apZ, a, e2);
+                station->B = tem2->B / 57.295779513;
+                station->L = tem2->L / 57.295779513;
                 station->H = tem2->H;
                 
 
@@ -191,7 +191,7 @@
                         rah->A -= 2 * PI;
                 rah->R = sqrt(enu->E * enu->E + enu->N * enu->N + enu->U * enu->U);
                 //*******************************************************************************//
-                
+
                 if (blh->H < 0 || nav_b[best_epoch].sHEA != 0)
                 { 
                     break;
