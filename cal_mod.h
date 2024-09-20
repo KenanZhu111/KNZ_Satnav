@@ -7,18 +7,17 @@
 #include"read.h"
 #include"2gpst.h"
 #include"select_epo.h"
+#include"xyz2blh.h"
 
-FILE * result_file = NULL;
-
-#define a  6378137.0//长半轴
-#define f  (1 / 298.257223563)//扁率
-#define e2  (f*(2-f))//第一偏心率平方
-#define C_V 299792458//光速（m）
-#define GM 398600500000000//地心引力常数
-#define math_e 2.718281828459 //e值
-#define PI 3.141592653589793
+#define a       6378137.0//长半轴
+#define f       (1 / 298.257223563)//扁率
+#define e2      (f*(2-f))//第一偏心率平方
+#define C_V     299792458//光速（m）
+#define GM      398600500000000//地心引力常数
+#define math_e  2.718281828459 //e值
+#define PI      3.141592653589793
 #define Earth_e 7.2921151467e-5 //地球自转角速度
-#define C1 0
+#define C1      0
 
     //卫星位置结构体
     typedef struct
@@ -117,17 +116,19 @@ FILE * result_file = NULL;
     }
 
     //GPS卫星位置计算
-    int sat_gps_pos_clac(pnav_body nav_b, pobs_epoch obs_e, pobs_body obs_b,
+    int sat_gps_pos_clac(FILE * result_file, 
+                         pnav_body nav_b, pobs_epoch obs_e, pobs_body obs_b,
                          pobs_head obs_h, pstation station, ppos_t pos_t, 
-                         pblh blh, penu enu, prah rah, int o_epochnum, int gps_satnum)
+                         pblh blh, penu enu, prah rah, 
+                         int o_epochnum, int gps_satnum)
     {
         for (int i = 0; i < o_epochnum; i++)//第i个历元
         {
             result_file = fopen(".\\Pos_out\\LLA_result_for_read.txt", "a+");
-            fprintf(result_file, "\r>%04d %04d %02d %02d %02d %02d %07.04f",i + 1 ,obs_e[i].y ,obs_e[i].m ,obs_e[i].d ,obs_e[i].h ,obs_e[i].min ,obs_e[i].sec);
+            fprintf(result_file, "\n>%04d %04d %02d %02d %02d %02d %07.04f",i + 1 ,obs_e[i].y ,obs_e[i].m ,obs_e[i].d ,obs_e[i].h ,obs_e[i].min ,obs_e[i].sec);
             fclose(result_file);
             result_file = fopen(".\\Draw the Track[by PyGMT]\\LLA_result_for_PyGMT.txt", "a+");
-            fprintf(result_file, "\r>%04d %04d %02d %02d %02d %02d %07.04f",i + 1 ,obs_e[i].y ,obs_e[i].m ,obs_e[i].d ,obs_e[i].h ,obs_e[i].min ,obs_e[i].sec);
+            fprintf(result_file, "\n>%04d %04d %02d %02d %02d %02d %07.04f",i + 1 ,obs_e[i].y ,obs_e[i].m ,obs_e[i].d ,obs_e[i].h ,obs_e[i].min ,obs_e[i].sec);
             fclose(result_file);
             result_file = fopen(".\\Observation_Station_Site-Solving_by_Matlab\\LLA_result_for_Matlab.txt", "a+");
             fprintf(result_file, "\n>%04d %04d %02d %02d %02d %02d %07.04f",i + 1 ,obs_e[i].y ,obs_e[i].m ,obs_e[i].d ,obs_e[i].h ,obs_e[i].min ,obs_e[i].sec);
@@ -156,55 +157,21 @@ FILE * result_file = NULL;
                     gps_pos( i, sPRN, best_epoch, GPSsec, nav_b, obs_h, pos_t);
                 }
 
-                //地固坐标系转经纬大地高坐标系******************************************************//
-                double X = pos_t[i].X[sPRN];
-                double Y = pos_t[i].Y[sPRN];
-                double Z = pos_t[i].Z[sPRN];
-                double B = 0.0, N = 0.0, H = 0.0, R0, R1, deltaH, deltaB;
-                R0 = sqrt(pow(X, 2) + pow(Y, 2));
-                R1 = sqrt(pow(X, 2) + pow(Y, 2) + pow(Z, 2));
-                //经度直接求解
-                blh->L = atan2(Y, X) * 57.295779513;
-                //迭代求大地维度和大地高
-                N = a;
-                H = R1 - a;
-                B = atan2(Z * (N + H), R0 * (N * (1 - e2) + H));
-                do
-                {
-                    deltaH = N;//判断收敛所用
-                    deltaB = B;
-		            N = a / sqrt(1 - e2 * pow(sin(B), 2));
-		            H = R0 / cos(B) - N;
-		            B = atan2(Z * (N + H), R0 * (N * (1 - e2) + H));
-	            } while (fabs(deltaH - H) > 1.0e-3 && fabs(deltaB - B) > 1.0e-9);
-	            blh->B = B * 57.295779513;
-	            blh->H = H ;
-                //*******************************************************************************//
+                //地固坐标系转经纬大地高坐标系
+                pxyz2blh tem1 = NULL;
+                tem1 = (pxyz2blh)malloc(sizeof(pxyz2blh));
+                tem1 = XYZtoBLH( tem1, pos_t[i].X[sPRN], pos_t[i].Y[sPRN], pos_t[i].Z[sPRN], a, e2);
+                blh->B = tem1->B;
+                blh->L = tem1->L;
+                blh->H = tem1->H;
 
-                //地固坐标系转经纬大地高坐标系******************************************************//
-                X = obs_h->apX;
-                Y = obs_h->apY;
-                Z = obs_h->apZ;
-                B = 0.0, N = 0.0, H = 0.0;
-                R0 = sqrt(pow(X, 2) + pow(Y, 2));
-                R1 = sqrt(pow(X, 2) + pow(Y, 2) + pow(Z, 2));
-                //经度直接求解
-                station->L = atan2(Y, X);
-                //迭代求大地维度和大地高
-                N = a;
-                H = R1 - a;
-                B = atan2(Z * (N + H), R0 * (N * (1 - e2) + H));
-                do
-                {
-                    deltaH = N;//判断收敛所用
-                    deltaB = B;
-		            N = a / sqrt(1 - e2 * pow(sin(B), 2));
-		            H = R0 / cos(B) - N;
-		            B = atan2(Z * (N + H), R0 * (N * (1 - e2) + H));
-	            } while (fabs(deltaH - H) > 1.0e-3 && fabs(deltaB - B) > 1.0e-9);
-	            station->B = B;
-	            station->H = H;
-                //*******************************************************************************//
+                pxyz2blh tem2 = NULL;
+                tem2 = (pxyz2blh)malloc(sizeof(pxyz2blh));
+                XYZtoBLH( tem2, obs_h->apX, obs_h->apY, obs_h->apZ, a, e2);
+                station->B = tem2->B;
+                station->L = tem2->L;
+                station->H = tem2->H;
+                
 
                 //大地高坐标系转东北天坐标系*******************************************************//
                 double sinL = sin(station->L);
@@ -215,8 +182,7 @@ FILE * result_file = NULL;
                 enu->N = -sinB*cosL*(pos_t[i].X[sPRN] - obs_h->apX) - sinB*sinL*(pos_t[i].Y[sPRN] - obs_h->apY) + cosB*(pos_t[i].Z[sPRN] - obs_h->apZ);
                 enu->U = cosB*cosL*(pos_t[i].X[sPRN] - obs_h->apX) + cosB*sinL*(pos_t[i].Y[sPRN] - obs_h->apY) + sinB*(pos_t[i].Z[sPRN] - obs_h->apZ);
                 //*******************************************************************************//
-
-                //卫星方位角a，高度角h，向径r计算**************************************************//
+                //卫星方位角a，高度角h，向径r计算
                 rah->H = atan2(enu->U, sqrt(enu->E * enu->E + enu->N * enu->N)) * 57.295779513;
                 rah->A = atan2(enu->E, enu->U) * 57.295779513;
                     if (rah->A < 0)
@@ -224,8 +190,8 @@ FILE * result_file = NULL;
                     if (rah->A > 2 * PI)
                         rah->A -= 2 * PI;
                 rah->R = sqrt(enu->E * enu->E + enu->N * enu->N + enu->U * enu->U);
-
                 //*******************************************************************************//
+                
                 if (blh->H < 0 || nav_b[best_epoch].sHEA != 0)
                 { 
                     break;

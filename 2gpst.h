@@ -1,8 +1,6 @@
 #ifndef _2GPST_H_
 #define _2GPST_H_
 
-#include"read.h"
-
 double TimetoGPSsec(int y, int m, int d, double h, int min, double sec)
 {
 	if (m > 2)

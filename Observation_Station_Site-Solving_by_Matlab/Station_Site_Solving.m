@@ -94,6 +94,7 @@ for i = 1:1:eponum
             B(j, 3) = -((satZ(i, j) - apZ) / R);
             B(j, 4) = 1;
 
+%           简化的Hopfield模型
             dtrop = 2.47/sind(H(i, j))+0.0121;
 
 % % % % % % % 理想化的Saastamoinen模型/对流层改正

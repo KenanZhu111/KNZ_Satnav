@@ -10,8 +10,9 @@
 int main(void)
 {
 	//数据读取
-	FILE * fp_nav = NULL;//导航星历文件指针
-	FILE * fp_obs = NULL;//观测值文件指针
+	FILE * fp_nav = NULL;     //导航星历文件指针
+	FILE * fp_obs = NULL;     //观测值文件指针
+	FILE * result_file = NULL;//结果输出文件指针
 
 	pstation station = NULL;
 	ppos_t pos_t = NULL;
@@ -57,7 +58,8 @@ int main(void)
 	rah = (prah)malloc(sizeof(prah) * o_epochnum *256);
 	pos_t = (ppos_t)malloc(sizeof(ppos_t) * o_epochnum * 256);
 	station = (pstation)malloc(sizeof(pstation) * o_epochnum * 256);
-	sat_gps_pos_clac(nav_b, obs_e, obs_b, obs_h, station, pos_t, blh, enu, rah, o_epochnum, gps_satnum);
+	
+	sat_gps_pos_clac(result_file, nav_b, obs_e, obs_b, obs_h, station, pos_t, blh, enu, rah, o_epochnum, gps_satnum);
 
 	
 	return 0;
