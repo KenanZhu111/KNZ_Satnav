@@ -142,6 +142,12 @@
             fprintf(result_file, "\n>%04d %04d %02d %02d %02d %02d %07.04f",i + 1 ,obs_e[i].y ,obs_e[i].m ,obs_e[i].d ,obs_e[i].h ,obs_e[i].min ,obs_e[i].sec);
             fclose(result_file);
 
+            blh = (pblh)malloc(sizeof(pblh) * o_epochnum * 256);
+			enu = (penu)malloc(sizeof(penu) * o_epochnum * 256);
+			rah = (prah)malloc(sizeof(prah) * o_epochnum * 256);
+			pos_t = (ppos_t)malloc(sizeof(ppos_t) * o_epochnum * 256);
+			station = (pstation)malloc(sizeof(pstation) * o_epochnum *256);
+
             for (int j = 0; j < obs_e[i].gps_num; j++)//第j颗GPS卫星
             {
                 int y = obs_e[i].y; int m = obs_e[i].m; int d = obs_e[i].d; 
@@ -234,7 +240,13 @@
                     fclose(result_file);
                 }
             }       
-        
+            //释放指针内存
+            free(blh);pblh blh = NULL;
+            free(enu);penu enu = NULL;
+            free(rah);prah rah = NULL;
+            free(pos_t);ppos_t pos_t = NULL;
+            free(station);pstation station = NULL;
+
             result_file = fopen(".\\Observation_Station_Site-Solving_by_Matlab\\LLA_result_for_Matlab.txt", "a+");
             fprintf(result_file, "\n");
             fclose(result_file);

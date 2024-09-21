@@ -36,13 +36,13 @@ while(over == 0)
 		char obs_flie[20];
 		char nav_file[20];
 
-		printf("**************SPP-pseudorange-positioning**************\n");
+		printf("**************SPP-pseudorange-positioning***************************\n");
 		printf("**@Author: KenanZhu\n**@Date: 2024/09/21\n**@Make by: C\n");
 		printf("**@INTRO: The main functions of the software include:\n");
 		printf("**read RINEX3.04 files, and output three formats of document files,\n");
 		printf("**please cooperate with the corresponding tools for processing.\n");
 		printf("**Specific please see:\n https://github.com/KenanZhu111/SPP_-pseudorange-positioning\n");
-		printf("*******************************************************\n\n");
+		printf("********************************************************************\n\n");
 
 		printf("请选择您的语言:/Please choose your language\n(1)ENG/(0)中文\n");	
 		scanf("%d",&langop);
@@ -79,11 +79,11 @@ while(over == 0)
 			}
 			fclose(fp_obs);//关闭O文件
 
-		if (langop == 0)
+		if (langop == 0 && fp_obs != NULL)
 		{	printf("观测文件读取完成！\n");
 			printf("请输入导航文件的文件名（包含拓展名）：\n");
 			scanf("%s", &nav_file);}
-		if (langop == 1)
+		if (langop == 1 && fp_obs != NULL)
 		{	printf("This program only supports reading ver3.04 RINEX files\n");
 			printf("Please enter the file name (including the extension) of the Navigation data file.:\n");
 			scanf("%s", &nav_file);}			
@@ -119,15 +119,8 @@ while(over == 0)
 
 /* -------------------------------------------------------------------------- */
 		if (fp_obs != NULL && fp_nav != NULL)
-		{
-			blh = (pblh)malloc(sizeof(pblh) * o_epochnum *256);
-			enu = (penu)malloc(sizeof(penu) * o_epochnum *256);
-			rah = (prah)malloc(sizeof(prah) * o_epochnum *256);
-			pos_t = (ppos_t)malloc(sizeof(ppos_t) * o_epochnum * 256);
-			station = (pstation)malloc(sizeof(pstation) * o_epochnum * 256);
-			
-			over = sat_gps_pos_clac(result_file, nav_b, obs_e, obs_b, obs_h, station, pos_t, blh, enu, rah, o_epochnum, gps_satnum);
-			
+		{			
+			over = sat_gps_pos_clac(result_file, nav_b, obs_e, obs_b, obs_h, station, pos_t, blh, enu, rah, o_epochnum, gps_satnum);			
 		}
 /* -------------------------------------------------------------------------- */
 		if (langop == 0)
