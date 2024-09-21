@@ -243,6 +243,8 @@
         result_file = fopen(".\\Observation_Station_Site-Solving_by_Matlab\\LLA_result_for_Matlab.txt", "a+");
         fprintf(result_file, "\nEND");
         fclose(result_file);
+
+        return 1;
     }
 
 #endif
