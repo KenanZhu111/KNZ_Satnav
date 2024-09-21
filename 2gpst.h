@@ -1,6 +1,16 @@
 #ifndef _2GPST_H_
 #define _2GPST_H_
 
+/* -------------------------------------------------------------------------- */
+/// @brief 将世界协调时转换为GPS周内秒
+/// @param y 年
+/// @param m 月
+/// @param d 日
+/// @param h 时
+/// @param min 分
+/// @param sec 秒
+/// @return 返回GPS周内秒
+/* -------------------------------------------------------------------------- */
 double TimetoGPSsec(int y, int m, int d, double h, int min, double sec)
 {
 	if (m > 2)

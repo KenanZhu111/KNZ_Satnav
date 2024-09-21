@@ -22,7 +22,7 @@ void setstr(char* des, const char* src, int n)
 	}
 }
 
-//获取文件数据块行数，从END OF HEADER后开始起算
+/* ---------------------- 获取文件数据块行数，从END OF HEADER后开始起算 --------------------- */
 extern int getgpssatnum(FILE* fp_nav)
 {
 	int gps_satnum = 0;
@@ -60,7 +60,7 @@ extern int getgpssatnum(FILE* fp_nav)
 	return gps_satnum;
 }
 
-//将字符串转换为浮点数,i起始位置，n输入多少个字符
+/* ------------------------ 将字符串转换为浮点数,i起始位置，n输入多少个字符 ----------------------- */
 static double strtonum(const char* buff, int i, int n)
 {
 	double value = 0.0;
@@ -86,7 +86,7 @@ static double strtonum(const char* buff, int i, int n)
 	return sscanf(str, "%lf", &value) == 1 ? value : 0.0;
 }
 
-//导航头文件结构体
+/* -------------------------------- 导航头文件结构体 -------------------------------- */
 typedef struct nav_head
 {
 	double ver;//rinex 版本号
@@ -109,7 +109,7 @@ typedef struct nav_head
 	int leap;
 }nav_head, *pnav_head;
 
-//导航数据结构体
+/* --------------------------------- 导航数据结构体 -------------------------------- */
 typedef struct nav_body
 {
 	//数据块第一行内容：
@@ -169,7 +169,7 @@ typedef struct nav_body
  
 }nav_body, *pnav_body;
 
-//观测值头文件
+/* --------------------------------- 观测值头文件结构体 --------------------------------- */
 typedef struct obs_head
 {
 	double ver;//RINEX文件版本号
@@ -198,7 +198,7 @@ typedef struct obs_head
 }obs_head,*pobs_head;
 
 
-//观测值历元数据结构体
+/* ------------------------------- 观测值历元数据结构体 ------------------------------- */
 typedef struct obs_epoch
 {
 	//观测历元时刻
@@ -218,16 +218,19 @@ typedef struct obs_epoch
 }obs_epoch,*pobs_epoch;
 
 
-//观测值数据结构体
+/* -------------------------------- 观测值数据结构体 -------------------------------- */
 typedef struct obs_body
 {
 	double obs_gps[100][24];//GPS观测值
 	double obs_bds[100][24];//BDS观测值
 }obs_body,*pobs_body;
+/* -------------------------------------------------------------------------- */
 
 
-//读取O文件******************************************************************************************************// 
-//获取O文件历元数
+/* -------------------------------------------------------------------------- */
+/*                                    读取O文件                                  
+/* -------------------------------------------------------------------------- */
+/* -------------------------------- 获取O文件历元数 -------------------------------- */
 extern int get_epochnum(FILE* fp_obs)
 {
 	int n = 0;//记录历元数
@@ -246,7 +249,7 @@ extern int get_epochnum(FILE* fp_obs)
 	return n;
 }
 
-//读取O文件数据头
+/* -------------------------------- 读取O文件数据头 -------------------------------- */
 extern void read_o_h(FILE* fp_obs, pobs_head obs_h)
 {
 	char buff[MAXRINEX] = { 0 };
@@ -357,7 +360,7 @@ extern void read_o_h(FILE* fp_obs, pobs_head obs_h)
 	}
 }
 
-//读取O文件数据块
+/* -------------------------------- 读取O文件数据块 -------------------------------- */
 extern void read_o_b(FILE* fp_obs, pobs_epoch obs_e, pobs_body obs_b, int type_gps, int type_bds)
 {
 	int n = 0;//历元数
@@ -431,8 +434,10 @@ extern void read_o_b(FILE* fp_obs, pobs_epoch obs_e, pobs_body obs_b, int type_g
 	
 }
 
-//读取N文件***************************************************************************************************************//
-//读取N文件数据头
+/* -------------------------------------------------------------------------- */
+/*                                    读取N文件                                   
+/* -------------------------------------------------------------------------- */
+/* -------------------------------- 读取N文件数据头 -------------------------------- */
 void read_n_h(FILE* fp_nav, pnav_head nav_h)
 {
 	char buff[MAXRINEX] = { 0 };
@@ -505,7 +510,7 @@ void read_n_h(FILE* fp_nav, pnav_head nav_h)
 	}
 }
 
-//读取N文件数据块
+/* -------------------------------- 读取N文件数据块 -------------------------------- */
 void read_n_b(FILE* fp_nav, pnav_body nav_b)
 {
 	int i_g = 0;//第i_g个GPS卫星数据
@@ -596,6 +601,6 @@ void read_n_b(FILE* fp_nav, pnav_body nav_b)
 		}		
 	}
 }
-
+/* -------------------------------------------------------------------------- */
 
 #endif

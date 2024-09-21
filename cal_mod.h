@@ -9,6 +9,7 @@
 #include"select_epo.h"
 #include"xyz2blh.h"
 
+/* -------------------------------------------------------------------------- */
 #define a       6378137.0//长半轴
 #define f       (1 / 298.257223563)//扁率
 #define e2      (f*(2-f))//第一偏心率平方
@@ -18,6 +19,7 @@
 #define PI      3.141592653589793
 #define Earth_e 7.2921151467e-5 //地球自转角速度
 #define C1      0
+/* -------------------------------------------------------------------------- */
 
     //卫星位置结构体
     typedef struct
@@ -69,7 +71,7 @@
         double H;
     }rah, *prah;
 
-    //GPS卫星位置计算函数
+    /* ------------------------------- GPS卫星位置计算函数 ------------------------------ */
     int gps_pos(int eponum, int sPRN, int best_epoch, double GPSsec, 
                 pnav_body nav_b, pobs_head obs_h, ppos_t pos_t)
     {    
@@ -114,8 +116,10 @@
         double rela = 2*sqrt(GM) * nav_b[best_epoch].e * nav_b[best_epoch].sqrtA * sin(Es)/pow(C_V,2);
         pos_t[eponum].delta_clk[sPRN] = nav_b[best_epoch].sa0 + nav_b[best_epoch].sa1 * tk + nav_b[best_epoch].sa2 * pow(tk,2) - rela;
     }
+    /* -------------------------------------------------------------------------- */
 
-    //GPS卫星位置计算
+
+    /* ------------------------------- GPS卫星位置计算 ------------------------------ */
     int sat_gps_pos_clac(FILE * result_file, 
                          pnav_body nav_b, pobs_epoch obs_e, pobs_body obs_b,
                          pobs_head obs_h, pstation station, ppos_t pos_t, 
@@ -157,7 +161,7 @@
                     gps_pos( i, sPRN, best_epoch, GPSsec, nav_b, obs_h, pos_t);
                 }
 
-                //地固坐标系转经纬大地高坐标系
+                /* ----------------------------- 地固坐标系转经纬大地高坐标系 ----------------------------- */
                 pxyz2blh tem1 = NULL;
                 tem1 = (pxyz2blh)malloc(sizeof(pxyz2blh));
                 tem1 = XYZtoBLH( tem1, pos_t[i].X[sPRN], pos_t[i].Y[sPRN], pos_t[i].Z[sPRN], a, e2);
@@ -172,8 +176,7 @@
                 station->L = tem2->L / 57.295779513;
                 station->H = tem2->H;
                 
-
-                //大地高坐标系转东北天坐标系*******************************************************//
+                /* -------------------------------------------------------------------------- */
                 double sinL = sin(station->L);
                 double cosL = cos(station->L);
                 double sinB = sin(station->B);
@@ -181,8 +184,8 @@
                 enu->E = -sinL*(pos_t[i].X[sPRN] - obs_h->apX) + cosL*(pos_t[i].Y[sPRN] - obs_h->apY);
                 enu->N = -sinB*cosL*(pos_t[i].X[sPRN] - obs_h->apX) - sinB*sinL*(pos_t[i].Y[sPRN] - obs_h->apY) + cosB*(pos_t[i].Z[sPRN] - obs_h->apZ);
                 enu->U = cosB*cosL*(pos_t[i].X[sPRN] - obs_h->apX) + cosB*sinL*(pos_t[i].Y[sPRN] - obs_h->apY) + sinB*(pos_t[i].Z[sPRN] - obs_h->apZ);
-                //*******************************************************************************//
-                //卫星方位角a，高度角h，向径r计算
+                /* -------------------------------------------------------------------------- */
+                /* ---------------------------- 卫星方位角a，高度角h，向径r计算 --------------------------- */
                 rah->H = atan2(enu->U, sqrt(enu->E * enu->E + enu->N * enu->N)) * 57.295779513;
                 rah->A = atan2(enu->E, enu->U) * 57.295779513;
                     if (rah->A < 0)
@@ -190,7 +193,7 @@
                     if (rah->A > 2 * PI)
                         rah->A -= 2 * PI;
                 rah->R = sqrt(enu->E * enu->E + enu->N * enu->N + enu->U * enu->U);
-                //*******************************************************************************//
+                /* -------------------------------------------------------------------------- */
 
                 if (blh->H < 0 || nav_b[best_epoch].sHEA != 0)
                 { 

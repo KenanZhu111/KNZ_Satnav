@@ -28,15 +28,15 @@ apH =    603.235;
 
 % 逐行读取文件
 while ~feof(file)
-        line = fgets(file);
-        flag_epo = extractBetween(line,1 ,1 );
-%   判断历元标识
+    line = fgets(file);
+    flag_epo = extractBetween(line,1 ,1 );
+    %  判断历元标识
     if strcmp(flag_epo, ">") == 1
-         eponum = str2double(extractBetween(line,2 ,5 ));
-       while eponum <= 2880 
-               flag_sat = extractBetween(line,1 ,1);
-%          判断卫星标识，读取卫星PRN号和XYZ坐标
-           if strcmp(flag_sat, "G") == 1
+        eponum = str2double(extractBetween(line,2 ,5 ));
+        while eponum <= 2880
+            flag_sat = extractBetween(line,1 ,1);
+            %  判断卫星标识，读取卫星PRN号和XYZ坐标
+            if strcmp(flag_sat, "G") == 1
                 satnum = satnum + 1;
                 P_t1(eponum, satnum) = str2double(extractBetween(line,11 + 16 + 16 + 16               ,25 + 16 + 16 + 16 ));
                 if P_t1(eponum, satnum) ~= 0
@@ -55,20 +55,20 @@ while ~feof(file)
                     satnum = satnum - 1;
                     line = fgets(file);
                 end
-           end
-%          开头字符不是G，但是是>,判断为一个历元的起点，进行数据读取
-           if strcmp(flag_sat, "G") == 0 && strcmp(flag_sat, ">") == 1
+            end
+            %  开头字符不是G，但是是>,判断为一个历元的起点，进行数据读取
+            if strcmp(flag_sat, "G") == 0 && strcmp(flag_sat, ">") == 1
                 satnum = 0;
                 line = fgets(file);
                 continue;
-           end
-%          开头字符既不是G，也不是>,判断为历元结束标志，跳出循环
-           if strcmp(flag_sat, "G") == 0 && strcmp(flag_sat, ">") == 0 && ~feof(file)
+            end
+            %  开头字符既不是G，也不是>,判断为历元结束标志，跳出循环
+            if strcmp(flag_sat, "G") == 0 && strcmp(flag_sat, ">") == 0 && ~feof(file)
                 sat_num(eponum) = satnum;
                 satnum = 0;
                 break;
-           end
-       end
+            end
+        end
     end
     if strcmp(flag_epo, ">") == 0
         continue;
@@ -123,9 +123,9 @@ for i = 1:1:eponum
             P_t = P_t1(i, j);
             end
             l(j, 1) = P_t - R + C_V * Dt(i,j) - dtrop;
-            if H(i, j)<5;
+            if H(i, j)<5
                H(i, j) = H(i, j);
-            end;
+            end
 
             P(j, j) = sind(H(i, j))^2;
         end
@@ -168,4 +168,15 @@ for i = 1:1:eponum
       
     end
 end
+
+%绘制结果图
+figure("Position",[200, 700,1000,200],"Name", "East component deviation","NumberTitle","off")
+bar(ENU(1,:))%E
+box off
+figure("Position",[200, 400,1000,200],"Name","North component deviation","NumberTitle","off")
+bar(ENU(2,:))%N
+box off
+figure("Position",[200, 100,1000,200],"Name",   "Up component deviation","NumberTitle","off")
+bar(ENU(3,:))%U
+box off
 

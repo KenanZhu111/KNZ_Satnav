@@ -1,7 +1,6 @@
 #ifndef _XYZ2BLH_H_
 #define _XYZ2BLH_H_
 
-#include<stdio.h>
 #include<stdlib.h>
 #include<math.h>
 
@@ -14,6 +13,16 @@ typedef struct
   double H;  
 }xyz2blh, *pxyz2blh;
 
+/* -------------------------------------------------------------------------- */
+/// @brief 将ECEF地心地固坐标转换为经纬高坐标
+/// @param xyz2blh 自定义结构体类型，用来传参
+/// @param X ECEF的X坐标
+/// @param Y ECEF的Y坐标
+/// @param Z ECEF的Z坐标
+/// @param a 椭球的长半轴
+/// @param e2 椭球的第一偏心率平方
+/// @return 返回自定义结构体类型包含B，L，H成员
+/* -------------------------------------------------------------------------- */
 pxyz2blh XYZtoBLH(pxyz2blh xyz2blh, 
                   double X, double Y, double Z, double a, double e2)
 
@@ -42,6 +51,4 @@ pxyz2blh XYZtoBLH(pxyz2blh xyz2blh,
     return xyz2blh;
 }
     
-
-
 #endif
