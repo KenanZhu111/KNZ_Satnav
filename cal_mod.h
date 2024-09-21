@@ -129,7 +129,8 @@
                          pobs_head obs_h, pstation station, ppos_t pos_t, 
                          pblh blh, penu enu, prah rah, 
                          int o_epochnum, int gps_satnum)
-    {
+    {   int progress = 0;
+        int count = 0;
         for (int i = 0; i < o_epochnum; i++)//第i个历元
         {
             result_file = fopen(".\\Pos_out\\LLA_result_for_read.txt", "a+");
@@ -250,8 +251,26 @@
             result_file = fopen(".\\Observation_Station_Site-Solving_by_Matlab\\LLA_result_for_Matlab.txt", "a+");
             fprintf(result_file, "\n");
             fclose(result_file);
+
+            /* -------------------------------------------------------------------------- */
+            //const char * progressstr = "[----------------------------------------------------]100%%";
+
+            int progress_now = (int)(((i+1)*100/2880));
+            if ((progress_now - progress)>=2)
+            {
+                printf("-");
+                count++;
+                progress = progress_now;
+                printf("-]%3d%%", progress);
+                for(int countb = 0; countb < (5); countb++)
+                    {
+                        printf("\b");
+                    } 
+            }
+                       
+            /* -------------------------------------------------------------------------- */
         }
-        
+
         result_file = fopen(".\\Observation_Station_Site-Solving_by_Matlab\\LLA_result_for_Matlab.txt", "a+");
         fprintf(result_file, "\nEND");
         fclose(result_file);
