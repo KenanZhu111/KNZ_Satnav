@@ -11,7 +11,7 @@
 /// @param sec 秒
 /// @return 返回GPS周内秒
 /* -------------------------------------------------------------------------- */
-double TimetoGPSsec(int y, int m, int d, double h, int min, double sec)
+double Time2GPSsec(int y, int m, int d, double h, int min, double sec)
 {
 	if (m > 2)
 	{

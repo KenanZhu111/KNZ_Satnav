@@ -23,7 +23,7 @@ typedef struct
 /// @param e2 椭球的第一偏心率平方
 /// @return 返回自定义结构体类型包含B，L，H成员
 /* -------------------------------------------------------------------------- */
-pxyz2blh XYZtoBLH(pxyz2blh xyz2blh, 
+pxyz2blh XYZ2BLH(pxyz2blh xyz2blh, 
                   double X, double Y, double Z, double a, double e2)
 
 {
@@ -32,7 +32,7 @@ pxyz2blh XYZtoBLH(pxyz2blh xyz2blh,
     R0 = sqrt(pow(X, 2) + pow(Y, 2));
     R1 = sqrt(pow(X, 2) + pow(Y, 2) + pow(Z, 2));
     //经度直接求解
-    xyz2blh->L = atan2(Y, X) * 57.295779513;
+    xyz2blh->L = atan2(Y, X);
     //迭代求大地维度和大地高
     N = a;
     H = R1 - a;
@@ -45,7 +45,7 @@ pxyz2blh XYZtoBLH(pxyz2blh xyz2blh,
 		H = R0 / cos(B) - N;
 		B = atan2(Z * (N + H), R0 * (N * (1 - e2) + H));
 	} while (fabs(deltaH - H) > 1.0e-3 && fabs(deltaB - B) > 1.0e-9);
-	xyz2blh->B = B * 57.295779513;
+	xyz2blh->B = B;
 	xyz2blh->H = H;
 
     return xyz2blh;

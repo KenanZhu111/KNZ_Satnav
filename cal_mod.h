@@ -8,6 +8,10 @@
 #include"2gpst.h"
 #include"select_epo.h"
 #include"xyz2blh.h"
+#include"degRrad.h"
+#include"deg2dms.h"
+#include"blh2enu.h"
+#include"rahcal.h"
 
 /* -------------------------------------------------------------------------- */
 #define a       6378137.0//长半轴
@@ -143,7 +147,7 @@
                 int y = obs_e[i].y; int m = obs_e[i].m; int d = obs_e[i].d; 
                 double h = obs_e[i].h; int min = obs_e[i].min; double sec = obs_e[i].sec;
                 //转换为GPS周内秒
-                double GPSsec = TimetoGPSsec(y, m, d, h, min, sec);
+                double GPSsec = Time2GPSsec(y, m, d, h, min, sec);
                 int sPRN = obs_e[i].sPRN_GPS[j];
                 //遍历N文件GPS卫星数据块，寻找最佳历元
                 int best_epoch = select_epoch(GPSsec, sPRN, nav_b, gps_satnum);
@@ -164,35 +168,38 @@
                 /* ----------------------------- 地固坐标系转经纬大地高坐标系 ----------------------------- */
                 pxyz2blh tem1 = NULL;
                 tem1 = (pxyz2blh)malloc(sizeof(pxyz2blh));
-                tem1 = XYZtoBLH( tem1, pos_t[i].X[sPRN], pos_t[i].Y[sPRN], pos_t[i].Z[sPRN], a, e2);
-                blh->B = tem1->B;
-                blh->L = tem1->L;
-                blh->H = tem1->H;
+                tem1 = XYZ2BLH( tem1, pos_t[i].X[sPRN], pos_t[i].Y[sPRN], pos_t[i].Z[sPRN], a, e2);
+                blh->B = rad2deg(tem1->B);
+                blh->L = rad2deg(tem1->L);
+                blh->H = rad2deg(tem1->H);
 
                 pxyz2blh tem2 = NULL;
                 tem2 = (pxyz2blh)malloc(sizeof(pxyz2blh));
-                tem2 = XYZtoBLH( tem2, obs_h->apX, obs_h->apY, obs_h->apZ, a, e2);
-                station->B = tem2->B / 57.295779513;
-                station->L = tem2->L / 57.295779513;
+                tem2 = XYZ2BLH( tem2, obs_h->apX, obs_h->apY, obs_h->apZ, a, e2);
+                station->B = tem2->B;
+                station->L = tem2->L;
                 station->H = tem2->H;
+                /* -------------------------------------------------------------------------- */
                 
+                /* ----------------------------- 经纬大地高坐标系转站心坐标系 ----------------------------- */
+                double deltax = pos_t[i].X[sPRN] - obs_h->apX;
+                double deltay = pos_t[i].Y[sPRN] - obs_h->apY;
+                double deltaz = pos_t[i].Z[sPRN] - obs_h->apZ;
+                pblh2enu tem3 = NULL;
+                tem3 = (pblh2enu)malloc(sizeof(pblh2enu));
+                tem3 = BLH2ENU(tem3, station->B, station->L, deltax, deltay, deltaz);
+                enu->E = tem3->E;
+                enu->N = tem3->N;
+                enu->U = tem3->U;
                 /* -------------------------------------------------------------------------- */
-                double sinL = sin(station->L);
-                double cosL = cos(station->L);
-                double sinB = sin(station->B);
-                double cosB = cos(station->B);
-                enu->E = -sinL*(pos_t[i].X[sPRN] - obs_h->apX) + cosL*(pos_t[i].Y[sPRN] - obs_h->apY);
-                enu->N = -sinB*cosL*(pos_t[i].X[sPRN] - obs_h->apX) - sinB*sinL*(pos_t[i].Y[sPRN] - obs_h->apY) + cosB*(pos_t[i].Z[sPRN] - obs_h->apZ);
-                enu->U = cosB*cosL*(pos_t[i].X[sPRN] - obs_h->apX) + cosB*sinL*(pos_t[i].Y[sPRN] - obs_h->apY) + sinB*(pos_t[i].Z[sPRN] - obs_h->apZ);
-                /* -------------------------------------------------------------------------- */
+
                 /* ---------------------------- 卫星方位角a，高度角h，向径r计算 --------------------------- */
-                rah->H = atan2(enu->U, sqrt(enu->E * enu->E + enu->N * enu->N)) * 57.295779513;
-                rah->A = atan2(enu->E, enu->U) * 57.295779513;
-                    if (rah->A < 0)
-                        rah->A += 2 * PI;
-                    if (rah->A > 2 * PI)
-                        rah->A -= 2 * PI;
-                rah->R = sqrt(enu->E * enu->E + enu->N * enu->N + enu->U * enu->U);
+                prahcal tem4 = NULL;
+                tem4 = (prahcal)malloc(sizeof(prahcal));
+                tem4 = RAHCAL(tem4, enu->E, enu->N, enu->U);
+                rah->R = tem4->R;
+                rah->A = rad2deg(tem4->A);
+                rah->H = rad2deg(tem4->H);
                 /* -------------------------------------------------------------------------- */
 
                 if (blh->H < 0 || nav_b[best_epoch].sHEA != 0)
@@ -200,19 +207,20 @@
                     break;
                 }
                 else
-                {  int B_sig = blh->B / fabs(blh->B);//符号判断
-                    blh->B_d = (int)(blh->B);//转换为度分秒
-                    blh->B_m = (int)((blh->B - blh->B_d) * 60);//分秒去除符号格式
-                    blh->B_s = (int)(((blh->B - blh->B_d) * 60 - blh->B_m) * 60);
-                    blh->B_m = blh->B_m * B_sig;
-                    blh->B_s = blh->B_s * B_sig;
+                {   
+                    pdeg2dms temb = NULL;
+                    temb = (pdeg2dms)malloc(sizeof(pdeg2dms));
+                    temb = DEG2DMS(temb, blh->B);
+                    blh->B_d = temb->D;
+                    blh->B_m = temb->M;
+                    blh->B_s = temb->S;
 
-                    int L_sig = blh->L / fabs(blh->L);
-                    blh->L_d = (int)(blh->L);//转换为度分秒
-                    blh->L_m = (int)((blh->L - blh->L_d) * 60);
-                    blh->L_s = (int)(((blh->L - blh->L_d) * 60 - blh->L_m) * 60);
-                    blh->L_m = blh->L_m * L_sig;
-                    blh->L_s = blh->L_s * L_sig;
+                    pdeg2dms teml = NULL;
+                    teml = (pdeg2dms)malloc(sizeof(pdeg2dms));
+                    teml = DEG2DMS(teml, blh->L);
+                    blh->L_d = teml->D;
+                    blh->L_m = teml->M;
+                    blh->L_s = teml->S;
 
                     result_file = fopen(".\\Pos_out\\LLA_result_for_read.txt", "a+");
                     fprintf(result_file, "\nG%02d[sPRN] %4d° %02d′ %02d″ %4d° %02d′ %02d″ %15.05f",sPRN, blh->B_d, blh->B_m, blh->B_s, blh->L_d, blh->L_m, blh->L_s, blh->H);
