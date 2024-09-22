@@ -131,8 +131,27 @@
                          int o_epochnum, int gps_satnum)
     {   int progress = 0;
         int count = 0;
+        pxyz2blh tem1 = NULL;
+        pxyz2blh tem2 = NULL;
+        pblh2enu tem3 = NULL;
+        prahcal tem4 = NULL;    
+        pdeg2dms temb = NULL;
+        pdeg2dms teml = NULL;
+        blh = (pblh)malloc(sizeof(pblh) * o_epochnum* 256);
+		enu = (penu)malloc(sizeof(penu) * o_epochnum* 256);
+		rah = (prah)malloc(sizeof(prah) * o_epochnum* 256);
+		pos_t = (ppos_t)malloc(sizeof(ppos_t) * o_epochnum* 256);
+		station = (pstation)malloc(sizeof(pstation) * o_epochnum* 256);
+        tem1 = (pxyz2blh)malloc(sizeof(pxyz2blh)* 512);
+        tem2 = (pxyz2blh)malloc(sizeof(pxyz2blh)* 512);
+        tem3 = (pblh2enu)malloc(sizeof(pblh2enu)* 512);
+        temb = (pdeg2dms)malloc(sizeof(pdeg2dms)* 512);
+        teml = (pdeg2dms)malloc(sizeof(pdeg2dms)* 512);
         for (int i = 0; i < o_epochnum; i++)//第i个历元
         {
+            
+            
+
             result_file = fopen(".\\Pos_out\\LLA_result_for_read.txt", "a+");
             fprintf(result_file, "\n>%04d %04d %02d %02d %02d %02d %07.04f",i + 1 ,obs_e[i].y ,obs_e[i].m ,obs_e[i].d ,obs_e[i].h ,obs_e[i].min ,obs_e[i].sec);
             fclose(result_file);
@@ -142,12 +161,7 @@
             result_file = fopen(".\\Observation_Station_Site-Solving_by_Matlab\\LLA_result_for_Matlab.txt", "a+");
             fprintf(result_file, "\n>%04d %04d %02d %02d %02d %02d %07.04f",i + 1 ,obs_e[i].y ,obs_e[i].m ,obs_e[i].d ,obs_e[i].h ,obs_e[i].min ,obs_e[i].sec);
             fclose(result_file);
-
-            blh = (pblh)malloc(sizeof(pblh) * o_epochnum * 256);
-			enu = (penu)malloc(sizeof(penu) * o_epochnum * 256);
-			rah = (prah)malloc(sizeof(prah) * o_epochnum * 256);
-			pos_t = (ppos_t)malloc(sizeof(ppos_t) * o_epochnum * 256);
-			station = (pstation)malloc(sizeof(pstation) * o_epochnum *256);
+            
 
             for (int j = 0; j < obs_e[i].gps_num; j++)//第j颗GPS卫星
             {
@@ -172,16 +186,12 @@
                     gps_pos( i, sPRN, best_epoch, GPSsec, nav_b, obs_h, pos_t);
                 }
 
-                /* ----------------------------- 地固坐标系转经纬大地高坐标系 ----------------------------- */
-                pxyz2blh tem1 = NULL;
-                tem1 = (pxyz2blh)malloc(sizeof(pxyz2blh));
+                /* ----------------------------- 地固坐标系转经纬大地高坐标系 ----------------------------- */ 
                 tem1 = XYZ2BLH( tem1, pos_t[i].X[sPRN], pos_t[i].Y[sPRN], pos_t[i].Z[sPRN], a, e2);
                 blh->B = rad2deg(tem1->B);
                 blh->L = rad2deg(tem1->L);
                 blh->H = rad2deg(tem1->H);
 
-                pxyz2blh tem2 = NULL;
-                tem2 = (pxyz2blh)malloc(sizeof(pxyz2blh));
                 tem2 = XYZ2BLH( tem2, obs_h->apX, obs_h->apY, obs_h->apZ, a, e2);
                 station->B = tem2->B;
                 station->L = tem2->L;
@@ -192,8 +202,7 @@
                 double deltax = pos_t[i].X[sPRN] - obs_h->apX;
                 double deltay = pos_t[i].Y[sPRN] - obs_h->apY;
                 double deltaz = pos_t[i].Z[sPRN] - obs_h->apZ;
-                pblh2enu tem3 = NULL;
-                tem3 = (pblh2enu)malloc(sizeof(pblh2enu));
+                 
                 tem3 = BLH2ENU(tem3, station->B, station->L, deltax, deltay, deltaz);
                 enu->E = tem3->E;
                 enu->N = tem3->N;
@@ -201,29 +210,22 @@
                 /* -------------------------------------------------------------------------- */
 
                 /* ---------------------------- 卫星方位角a，高度角h，向径r计算 --------------------------- */
-                prahcal tem4 = NULL;
-                tem4 = (prahcal)malloc(sizeof(prahcal));
                 tem4 = RAHCAL(tem4, enu->E, enu->N, enu->U);
                 rah->R = tem4->R;
                 rah->A = rad2deg(tem4->A);
                 rah->H = rad2deg(tem4->H);
                 /* -------------------------------------------------------------------------- */
-
                 if (blh->H < 0 || nav_b[best_epoch].sHEA != 0)
                 { 
                     break;
                 }
                 else
                 {   
-                    pdeg2dms temb = NULL;
-                    temb = (pdeg2dms)malloc(sizeof(pdeg2dms));
                     temb = DEG2DMS(temb, blh->B);
                     blh->B_d = temb->D;
                     blh->B_m = temb->M;
                     blh->B_s = temb->S;
 
-                    pdeg2dms teml = NULL;
-                    teml = (pdeg2dms)malloc(sizeof(pdeg2dms));
                     teml = DEG2DMS(teml, blh->L);
                     blh->L_d = teml->D;
                     blh->L_m = teml->M;
@@ -240,14 +242,8 @@
                                             ,sPRN, pos_t[i].X[sPRN], pos_t[i].Y[sPRN], pos_t[i].Z[sPRN], obs_b[i].obs_gps[j][C1], obs_b[i].obs_gps[j][10], rah->H, nav_b[best_epoch].TGD, pos_t[i].delta_clk[sPRN]);
                     fclose(result_file);
                 }
-            }       
-            //释放指针内存
-            free(blh);pblh blh = NULL;
-            free(enu);penu enu = NULL;
-            free(rah);prah rah = NULL;
-            free(pos_t);ppos_t pos_t = NULL;
-            free(station);pstation station = NULL;
 
+            }       
             result_file = fopen(".\\Observation_Station_Site-Solving_by_Matlab\\LLA_result_for_Matlab.txt", "a+");
             fprintf(result_file, "\n");
             fclose(result_file);
@@ -274,7 +270,11 @@
         result_file = fopen(".\\Observation_Station_Site-Solving_by_Matlab\\LLA_result_for_Matlab.txt", "a+");
         fprintf(result_file, "\nEND");
         fclose(result_file);
-
+        free(blh);blh = NULL;
+        free(enu);enu = NULL;
+        free(rah);rah = NULL;
+        free(pos_t);pos_t = NULL;
+        free(station);station = NULL;
         return 1;
     }
 
