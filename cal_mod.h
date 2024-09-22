@@ -12,71 +12,9 @@
 #include"deg2dms.h"
 #include"blh2enu.h"
 #include"rahcal.h"
-
-/* -------------------------------------------------------------------------- */
-#define a       6378137.0//长半轴
-#define f       (1 / 298.257223563)//扁率
-#define e2      (f*(2-f))//第一偏心率平方
-#define C_V     299792458//光速（m）
-#define GM      398600500000000//地心引力常数
-#define math_e  2.718281828459 //e值
-#define PI      3.141592653589793
-#define Earth_e 7.2921151467e-5 //地球自转角速度
-#define C1      0
-/* -------------------------------------------------------------------------- */
-
-    //卫星位置结构体
-    typedef struct
-    {
-        double X[36];
-        double Y[36];
-        double Z[36];
-        double deltat[36];//改正前的信号传播时间
-        double delta_t[36];//改正后的信号传播时间
-        double delta_clk[36];
-    }pos_t, *ppos_t;
-
-    //测站位置结构体
-    typedef struct
-    {
-        double X;
-        double Y;
-        double Z;
-        double B;
-        double L;
-        double H;
-        double delta_TR;
-    }station, *pstation;
-
-    typedef struct
-    {
-        double B;
-        int B_d;
-        int B_m;
-        int B_s;
-        double L;
-        int L_d;
-        int L_m;
-        int L_s;
-        double H;
-    }blh, *pblh;
    
-    typedef struct enu
-    {
-	    double E;
-	    double N;
-	    double U;
-    }enu, *penu;
-
-    typedef struct rah
-    {
-        double R;
-        double A;
-        double H;
-    }rah, *prah;
-
-    /* ------------------------------- GPS卫星位置计算函数 ------------------------------ */
-    int gps_pos(int eponum, int sPRN, int best_epoch, double GPSsec, 
+/* ------------------------------- GPS卫星位置计算函数 ------------------------------ */
+int gps_pos(int eponum, int sPRN, int best_epoch, double GPSsec, 
                 pnav_body nav_b, pobs_head obs_h, ppos_t pos_t)
     {    
         double T_S = GPSsec - pos_t[eponum].deltat[sPRN];//计算信号发射时刻
@@ -120,15 +58,15 @@
         double rela = 2*sqrt(GM) * nav_b[best_epoch].e * nav_b[best_epoch].sqrtA * sin(Es)/pow(C_V,2);
         pos_t[eponum].delta_clk[sPRN] = nav_b[best_epoch].sa0 + nav_b[best_epoch].sa1 * tk + nav_b[best_epoch].sa2 * pow(tk,2) - rela;
     }
-    /* -------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
 
 
-    /* ------------------------------- GPS卫星位置计算 ------------------------------ */
-    int sat_gps_pos_clac(FILE * result_file, 
-                         pnav_body nav_b, pobs_epoch obs_e, pobs_body obs_b,
-                         pobs_head obs_h, pstation station, ppos_t pos_t, 
-                         pblh blh, penu enu, prah rah, 
-                         int o_epochnum, int gps_satnum)
+/* ------------------------------- GPS卫星位置计算&输出 ------------------------------ */
+int sat_gps_pos_clac(FILE * result_file, 
+                     pnav_body nav_b, pobs_epoch obs_e, pobs_body obs_b,
+                     pobs_head obs_h, pstation station, ppos_t pos_t, 
+                     pblh blh, penu enu, prah rah, 
+                     int o_epochnum, int gps_satnum)
     {   int progress = 0;
         int count = 0;
         pxyz2blh tem1 = NULL;
@@ -149,9 +87,6 @@
         teml = (pdeg2dms)malloc(sizeof(pdeg2dms)* 512);
         for (int i = 0; i < o_epochnum; i++)//第i个历元
         {
-            
-            
-
             result_file = fopen(".\\Pos_out\\LLA_result_for_read.txt", "a+");
             fprintf(result_file, "\n>%04d %04d %02d %02d %02d %02d %07.04f",i + 1 ,obs_e[i].y ,obs_e[i].m ,obs_e[i].d ,obs_e[i].h ,obs_e[i].min ,obs_e[i].sec);
             fclose(result_file);
@@ -187,12 +122,12 @@
                 }
 
                 /* ----------------------------- 地固坐标系转经纬大地高坐标系 ----------------------------- */ 
-                tem1 = XYZ2BLH( tem1, pos_t[i].X[sPRN], pos_t[i].Y[sPRN], pos_t[i].Z[sPRN], a, e2);
+                tem1 = XYZ2BLH( tem1, pos_t[i].X[sPRN], pos_t[i].Y[sPRN], pos_t[i].Z[sPRN]);
                 blh->B = rad2deg(tem1->B);
                 blh->L = rad2deg(tem1->L);
                 blh->H = tem1->H;
 
-                tem2 = XYZ2BLH( tem2, obs_h->apX, obs_h->apY, obs_h->apZ, a, e2);
+                tem2 = XYZ2BLH( tem2, obs_h->apX, obs_h->apY, obs_h->apZ);
                 station->B = tem2->B;
                 station->L = tem2->L;
                 station->H = tem2->H;
@@ -254,10 +189,10 @@
             int progress_now = (int)(((i+1)*100/2880));
             if ((progress_now - progress)>=2)
             {
-                printf("-");
+                printf("=");
                 count++;
                 progress = progress_now;
-                printf("-]%3d%%", progress);
+                printf("=]%3d%%", progress);
                 for(int countb = 0; countb < (5); countb++)
                     {
                         printf("\b");

@@ -5,60 +5,87 @@
 #include<string.h>
 
 #define MAXRINEX 1000//一行最大字符数
+/* ------------------------------ WGS-84 CONST ------------------------------ */
+#define a       6378137.0
+#define e2      (0.0033528106647475*(2 - 0.0033528106647475))
+#define C_V     299792458
+#define GM      398600500000000
+#define math_e  2.718281828459
+#define PI      3.141592653589793
+#define Earth_e 7.2921151467e-5
+#define C1      0
+/* ----------------------------- GPS OBSERV TYPE ---------------------------- */
+#define C1C     101
+#define C1S     102
+#define C1L     103
+#define C1X     104
+#define C1P     105
+#define C1W     106
+#define C1Y     107
+#define C1M     108
 
-void setstr(char* des, const char* src, int n)
-{
-	char* p = des;
-	const char* q = src;
-	while (*q && q < src+n)
-	{
-		*p++ = *q++;
-	}
-	*p-- = '\0';
-//去掉尾部空格
-	while (p >= des && *p == ' ')
-	{
-		*p-- = '\0';
-	}
-}
+#define C2C     201
+#define C2S     202
+#define C2L     203
+#define C2X     204
+#define C2P     205
+#define C2W     206
+#define C2Y     207
+#define C2M     208
 
-/* ---------------------- 获取文件数据块行数，从END OF HEADER后开始起算 --------------------- */
-extern int getgpssatnum(FILE* fp_nav)
-{
-	int gps_satnum = 0;
-	int flag = 0;
-	char buff[MAXRINEX];//用来存放读取到的字符串
-	char satvar;
-	char* lable = buff + 60;
-	//fgets函数，读取一行，当读取结束后返回NULL指针，格式如下：
-	//char * fgets ( char * str, int num, FILE * stream );
-	while (fgets(buff, MAXRINEX, fp_nav))
-	{
-		if (flag == 1)
-		{
-			while (fgets(buff, MAXRINEX, fp_nav))
-			{
-				strncpy(&satvar, buff + 0, 1);
-				if (satvar != 'G')
-				{
-					continue;
-				}
-				else if (satvar == 'G')
-				{
-					gps_satnum++;
-					break;	
-				}	
-			}
-											
-		}
+#define C5I     501
+#define C5Q     502
+#define C5X     503
+/* ------------------------------ FOR CALMOD.H ------------------------------ */
+   //卫星位置结构体
+    typedef struct
+    {
+        double X[36];
+        double Y[36];
+        double Z[36];
+        double deltat[36];//改正前的信号传播时间
+        double delta_t[36];//改正后的信号传播时间
+        double delta_clk[36];
+    }pos_t, *ppos_t;
 
-		if (strstr(lable, "END OF HEADER"))
-		{
-			flag = 1;
-		}
-	}
-	return gps_satnum;
-}
+    //测站位置结构体
+    typedef struct
+    {
+        double X;
+        double Y;
+        double Z;
+        double B;
+        double L;
+        double H;
+        double delta_TR;
+    }station, *pstation;
+	//经纬高结构体
+    typedef struct
+    {
+        double B;
+        int B_d;
+        int B_m;
+        int B_s;
+        double L;
+        int L_d;
+        int L_m;
+        int L_s;
+        double H;
+    }blh, *pblh;
+    //东北天结构体
+    typedef struct enu
+    {
+	    double E;
+	    double N;
+	    double U;
+    }enu, *penu;
+	//高度方位角结构体
+    typedef struct rah
+    {
+        double R;
+        double A;
+        double H;
+    }rah, *prah;
 
 /* ------------------------ 将字符串转换为浮点数,i起始位置，n输入多少个字符 ----------------------- */
 static double strtonum(const char* buff, int i, int n)
@@ -230,6 +257,7 @@ typedef struct obs_body
 /* -------------------------------------------------------------------------- */
 /*                                    读取O文件                                  
 /* -------------------------------------------------------------------------- */
+
 /* -------------------------------- 获取O文件历元数 -------------------------------- */
 extern int get_epochnum(FILE* fp_obs)
 {
@@ -437,6 +465,45 @@ extern void read_o_b(FILE* fp_obs, pobs_epoch obs_e, pobs_body obs_b, int type_g
 /* -------------------------------------------------------------------------- */
 /*                                    读取N文件                                   
 /* -------------------------------------------------------------------------- */
+
+/* ---------------------- 获取文件数据块行数，从END OF HEADER后开始起算 --------------------- */
+extern int getgpssatnum(FILE* fp_nav)
+{
+	int gps_satnum = 0;
+	int flag = 0;
+	char buff[MAXRINEX];//用来存放读取到的字符串
+	char satvar;
+	char* lable = buff + 60;
+	//fgets函数，读取一行，当读取结束后返回NULL指针，格式如下：
+	//char * fgets ( char * str, int num, FILE * stream );
+	while (fgets(buff, MAXRINEX, fp_nav))
+	{
+		if (flag == 1)
+		{
+			while (fgets(buff, MAXRINEX, fp_nav))
+			{
+				strncpy(&satvar, buff + 0, 1);
+				if (satvar != 'G')
+				{
+					continue;
+				}
+				else if (satvar == 'G')
+				{
+					gps_satnum++;
+					break;	
+				}	
+			}
+											
+		}
+
+		if (strstr(lable, "END OF HEADER"))
+		{
+			flag = 1;
+		}
+	}
+	return gps_satnum;
+}
+
 /* -------------------------------- 读取N文件数据头 -------------------------------- */
 void read_n_h(FILE* fp_nav, pnav_head nav_h)
 {

@@ -50,7 +50,7 @@ void ReadO_inTerminal(FILE *fp_obs, int langop, char obs_file[20])
 {
     if (langop == 0 && fp_obs == NULL)
 			{
-                printf("|>>  观测文件%s读取失败,请检查文件名或者确认文件是否被移动\n", obs_file);
+                printf("|>>  观测文件%s读取失败,请检查文件名或者确认文件是否被移动\n\n", obs_file);
             }
 	else if (langop == 0 && fp_obs != NULL)
 			{
@@ -63,7 +63,7 @@ void ReadO_inTerminal(FILE *fp_obs, int langop, char obs_file[20])
             }
 	else if (langop == 1 && fp_obs != NULL)	
 			{
-                printf("|>>  The observation file %s has been read successfully and data is being processed...\n", obs_file);
+                printf("|>>  The observation file %s has been read successfully and data is being processed...\n\n", obs_file);
             }
 }
 
@@ -72,13 +72,13 @@ pfilename OutO_InN_inTermianl(FILE *fp_obs, int langop, pfilename filename)
     if (langop == 0 && fp_obs != NULL)
 			{	
                 printf("|>>> 观测文件读取完成! <<<|\n\n\n");
-			    printf("|>>  请输入导航文件的文件名（包含拓展名）：\n");
+			    printf("|>>  请输入导航文件的文件名（包含拓展名）：\n\n");
 			    scanf("%s", &filename->nav_file);
             }
 	if (langop == 1 && fp_obs != NULL)
 			{	
                 printf("|>>> Observation file read complete! <<<|\n\n\n");
-			    printf("|>>  Please enter the file name (including the extension) of the Navigation data file.:\n");
+			    printf("|>>  Please enter the file name (including the extension) of the Navigation data file.:\n\n");
 			    scanf("%s", &filename->nav_file);
             }
     return filename;
@@ -88,7 +88,7 @@ void ReadN_inTerminal(FILE *fp_nav, FILE *fp_obs, int langop, char nav_file[20])
 {
     if (langop == 0 && fp_obs != NULL && fp_nav == NULL)
 			{
-                printf("|>>  导航文件%s读取失败,请检查文件名或者确认文件是否被移动\n", nav_file);
+                printf("|>>  导航文件%s读取失败,请检查文件名或者确认文件是否被移动\n\n", nav_file);
             }
 	else if (langop == 0 && fp_obs != NULL && fp_nav != NULL)
 			{
@@ -97,7 +97,7 @@ void ReadN_inTerminal(FILE *fp_nav, FILE *fp_obs, int langop, char nav_file[20])
 		
 	if (langop == 1 && fp_obs != NULL && fp_nav == NULL)
 			{
-                printf("|>>  Navigation file %s failed to be read. Please check the file name or confirm whether the file has been moved\n", nav_file);
+                printf("|>>  Navigation file %s failed to be read. Please check the file name or confirm whether the file has been moved\n\n", nav_file);
             }
 	else if (langop == 1 && fp_obs != NULL && fp_nav != NULL)	
 			{
@@ -109,11 +109,11 @@ void OutN_inTerminal(FILE *fp_nav, FILE *fp_obs, int langop)
 {
     if (langop == 0 && fp_obs != NULL && fp_nav != NULL)
 			{
-                printf("|>>> 导航文件读取完成! <<<|\n\n");printf("|>>  正在计算数据:[-");
+                printf("|>>> 导航文件读取完成! <<<|\n\n");printf("|>>  正在计算数据:[=");
             }
 	if (langop == 1 && fp_obs != NULL && fp_nav != NULL)
 			{
-                printf("|>>> Navigation file read complete! <<<|\n\n");printf("|>>  Calculating data:[-");
+                printf("|>>> Navigation file read complete! <<<|\n\n");printf("|>>  Calculating data:[=");
             }
 }
 

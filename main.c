@@ -1,3 +1,11 @@
+/*
+ * @Author: KenanZhu111 3471685733@qq.com
+ * @Date: 2024-09-03 16:26:35
+ * @LastEditors: KenanZhu111 3471685733@qq.com
+ * @LastEditTime: 2024-09-22 17:33:35
+ * @FilePath: \Sat_Position_Solving_ver1.4\main.c
+ */
+
 /* -------------------------------------------------------------------------- */
 /* 仅支持{ Ver 3.04 }版本RENIX观测值文件与广播星历文件读取                    
 /* -------------------------------------------------------------------------- */
@@ -85,5 +93,6 @@ while(over == 0)
 
 		End_inTerminal(fp_nav, fp_obs, langop, over);//显示函数
 	}
+	system("pause");
 	return 0;
 }

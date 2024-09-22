@@ -1,9 +1,10 @@
 #ifndef _RAHCAL_H_
 #define _RAHCAL_H_
-#define PI 3.141592653589793
 
 #include<stdlib.h>
 #include<math.h>
+
+#include"read.h"
 
 typedef struct 
 {

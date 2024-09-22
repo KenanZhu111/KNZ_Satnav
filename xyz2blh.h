@@ -24,7 +24,7 @@ typedef struct
 /// @return 返回自定义结构体类型包含B，L，H成员
 /* -------------------------------------------------------------------------- */
 pxyz2blh XYZ2BLH(pxyz2blh xyz2blh, 
-                  double X, double Y, double Z, double a, double e2)
+                  double X, double Y, double Z)
 
 {
     xyz2blh = (pxyz2blh)malloc(sizeof(pxyz2blh));
