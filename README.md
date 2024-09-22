@@ -9,11 +9,12 @@
 
 ## Program notice
   ### About main calculate
-  * Due to the lack of program writing experience, the ease of file reading is not perfect, if you need to read other observation files and navigation files, you can make changes in the ***main.c*** file.  
+  * ~~Due to the lack of program writing experience, the ease of file reading is not perfect, if you need to read other observation files and navigation files, you can make changes in the ***main.c*** file.~~
+  * It is constantly modified and updated, and the reading of the file is controlled through the form of the terminal, and is optimized visually.[ADIN 2024/9/22]  
   ### About PyGMT
   * I have improved the drawing part of PyGMT to ensure that the output data can be used independently.    
   ### About Matlab
-  * When the new station data is needed for calculation, two parts of parameters in the Matlab source file need to be corrected, the first is the exact coordinates of the station in the file header, and the second is the longitude, latitude and elevation information of the station in the file header  
+  * When the new station data is needed for calculation, two parts of parameters in the Matlab source file need to be corrected, the first is the exact coordinates of the station in the file header, and the second is the longitude, latitude and elevation information of the station in the file header.(OINP) 
 
 ## Project notice
 * Due to my limited programming level, PyGMT drawing used too miscellaneous judgment statements, resulting in slow drawing or debugging errors, please forgive me.
@@ -24,6 +25,8 @@
 | *https://www.pygmt.org/latest/index.html*                  
 | *https://blog.csdn.net/FrankXCR/article/details/135438701*
 
+###  Document label specification
+* [ADIN TIME]: new added in "TIME"(e.g. [ADIN 2024/9/22]: new added in 2024/9/22).
+* (OINP): Operation in progress, or in urgent need of improvement. 
   
-  
-### *This program code is solely for study and communication purposes* ###
+#### *This program code is solely for study and communication purposes* ####
