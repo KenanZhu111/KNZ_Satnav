@@ -190,7 +190,7 @@
                 tem1 = XYZ2BLH( tem1, pos_t[i].X[sPRN], pos_t[i].Y[sPRN], pos_t[i].Z[sPRN], a, e2);
                 blh->B = rad2deg(tem1->B);
                 blh->L = rad2deg(tem1->L);
-                blh->H = rad2deg(tem1->H);
+                blh->H = tem1->H;
 
                 tem2 = XYZ2BLH( tem2, obs_h->apX, obs_h->apY, obs_h->apZ, a, e2);
                 station->B = tem2->B;
