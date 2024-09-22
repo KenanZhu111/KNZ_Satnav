@@ -14,7 +14,7 @@ typedef struct
 int Begin_inTermianl()
 {
     int langop;
-    printf("|**************SPP-pseudorange-positioning*****************************************|\n");
+        printf("|**************SPP-pseudorange-positioning*****************************************|\n");
 	printf("**@Author: KenanZhu\n**@Date: 2024/09/21\n**@Make by: C & Python & Matlab\n");
 	printf("**@INTRO: \n**The main functions of the software include:\n");
 	printf("**read RINEX3.04 files, and output three formats of document files,\n");
