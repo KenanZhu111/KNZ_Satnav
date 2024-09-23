@@ -4,6 +4,8 @@
 #include<stdlib.h>
 #include<math.h>
 
+#include"public.h"
+
 #include"read.h"
 #include"2gpst.h"
 #include"select_epo.h"
@@ -82,13 +84,13 @@ int sat_gps_pos_clac(FILE * result_file,
 		station = (pstation)malloc(sizeof(pstation) * o_epochnum* 256);
         for (int i = 0; i < o_epochnum; i++)//第i个历元
         {
-            result_file = fopen(".\\Pos_out\\LLA_result_for_read.txt", "a+");
+            result_file = fopen(".\\Pos_out\\LLA_result.txt", "a+");
             fprintf(result_file, "\n>%04d %04d %02d %02d %02d %02d %07.04f",i + 1 ,obs_e[i].y ,obs_e[i].m ,obs_e[i].d ,obs_e[i].h ,obs_e[i].min ,obs_e[i].sec);
             fclose(result_file);
-            result_file = fopen(".\\Draw the Track[by PyGMT]\\LLA_result_for_PyGMT.txt", "a+");
+            result_file = fopen(".\\PyGMT_out\\LLA_result.txt", "a+");
             fprintf(result_file, "\n>%04d %04d %02d %02d %02d %02d %07.04f",i + 1 ,obs_e[i].y ,obs_e[i].m ,obs_e[i].d ,obs_e[i].h ,obs_e[i].min ,obs_e[i].sec);
             fclose(result_file);
-            result_file = fopen(".\\Observation_Station_Site-Solving_by_Matlab\\LLA_result_for_Matlab.txt", "a+");
+            result_file = fopen(".\\Result_out\\LLA_result.txt", "a+");
             fprintf(result_file, "\n>%04d %04d %02d %02d %02d %02d %07.04f",i + 1 ,obs_e[i].y ,obs_e[i].m ,obs_e[i].d ,obs_e[i].h ,obs_e[i].min ,obs_e[i].sec);
             fclose(result_file);
             
@@ -161,20 +163,20 @@ int sat_gps_pos_clac(FILE * result_file,
                     blh->L_m = teml.M;
                     blh->L_s = teml.S;
 
-                    result_file = fopen(".\\Pos_out\\LLA_result_for_read.txt", "a+");
+                    result_file = fopen(".\\Pos_out\\LLA_result.txt", "a+");
                     fprintf(result_file, "\nG%02d[sPRN] %4d° %02d′ %02d″ %4d° %02d′ %02d″ %15.05f",sPRN, blh->B_d, blh->B_m, blh->B_s, blh->L_d, blh->L_m, blh->L_s, blh->H);
                     fclose(result_file);
-                    result_file = fopen(".\\Draw the Track[by PyGMT]\\LLA_result_for_PyGMT.txt", "a+");
+                    result_file = fopen(".\\PyGMT_out\\LLA_result.txt", "a+");
                     fprintf(result_file, "\nG%02d[sPRN] %10.05f %10.05f %15.05f",sPRN, blh->B, blh->L, blh->H);
                     fclose(result_file);
-                    result_file = fopen(".\\Observation_Station_Site-Solving_by_Matlab\\LLA_result_for_Matlab.txt", "a+");
+                    result_file = fopen(".\\Result_out\\LLA_result.txt", "a+");
                     fprintf(result_file, "\nG%02d[sPRN] %15.05f %15.05f %15.05f %15.05f %15.05f %15.05f %15.12f %16.13f"
                                             ,sPRN, pos_t[i].X[sPRN], pos_t[i].Y[sPRN], pos_t[i].Z[sPRN], obs_b[i].obs_gps[j][C1], obs_b[i].obs_gps[j][10], rah->H, nav_b[best_epoch].TGD, pos_t[i].delta_clk[sPRN]);
                     fclose(result_file);
                 }
 
             }       
-            result_file = fopen(".\\Observation_Station_Site-Solving_by_Matlab\\LLA_result_for_Matlab.txt", "a+");
+            result_file = fopen(".\\Result_out\\LLA_result.txt", "a+");
             fprintf(result_file, "\n");
             fclose(result_file);
 
@@ -197,7 +199,7 @@ int sat_gps_pos_clac(FILE * result_file,
             /* -------------------------------------------------------------------------- */
         }
 
-        result_file = fopen(".\\Observation_Station_Site-Solving_by_Matlab\\LLA_result_for_Matlab.txt", "a+");
+        result_file = fopen(".\\Result_out\\LLA_result.txt", "a+");
         fprintf(result_file, "\nEND");
         fclose(result_file);
         free(blh);blh = NULL;

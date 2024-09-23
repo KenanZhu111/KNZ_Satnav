@@ -1,5 +1,6 @@
+function [ENU] = Station_Site_Solving()
 % 打开坐标文件
-file=fopen('LLA_result_for_Matlab.txt');       
+file=fopen('LLA_result.txt');       
 sPRN = [];
 satX = [];
 satY = [];

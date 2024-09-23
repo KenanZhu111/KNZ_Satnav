@@ -1,5 +1,10 @@
 {
     "files.associations": {
-        "unistd.h": "c"
+        "unistd.h": "c",
+        "select_epo.h": "c",
+        "xyz2blh.h": "c",
+        "deg2dms.h": "c",
+        "blh2enu.h": "c",
+        "terminal.h": "c"
     }
 }

@@ -4,7 +4,7 @@
 #include<stdlib.h>
 #include<math.h>
 
-#include"read.h"
+#include"public.h"
 
 typedef struct 
 {

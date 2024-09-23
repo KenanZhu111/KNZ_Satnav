@@ -1,7 +1,7 @@
 #ifndef _DEGRRAD_H_
 #define _DEGRRAD_H_
 
-#include"read.h"
+#include"public.h"
 
 /* -------------------------------------------------------------------------- */
 /// @brief 角度转弧度

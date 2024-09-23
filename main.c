@@ -14,9 +14,9 @@
 #include<string.h>
 #include<unistd.h>
 
-#include"read.h"
-#include"cal_mod.h"
-#include"terminal.h"
+#include"headers/read.h"
+#include"headers/cal_mod.h"
+#include"headers/terminal.h"
 
 int main(void)
 {
