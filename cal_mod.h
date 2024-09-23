@@ -69,22 +69,17 @@ int sat_gps_pos_clac(FILE * result_file,
                      int o_epochnum, int gps_satnum)
     {   int progress = 0;
         int count = 0;
-        pxyz2blh tem1 = NULL;
-        pxyz2blh tem2 = NULL;
-        pblh2enu tem3 = NULL;
-        prahcal tem4 = NULL;    
-        pdeg2dms temb = NULL;
-        pdeg2dms teml = NULL;
+        xyz2blh tem1 = {0};
+        xyz2blh tem2 = {0};
+        blh2enu tem3 = {0};
+        rahcal  tem4 = {0};    
+        deg2dms temb = {0};
+        deg2dms teml = {0};
         blh = (pblh)malloc(sizeof(pblh) * o_epochnum* 256);
 		enu = (penu)malloc(sizeof(penu) * o_epochnum* 256);
 		rah = (prah)malloc(sizeof(prah) * o_epochnum* 256);
 		pos_t = (ppos_t)malloc(sizeof(ppos_t) * o_epochnum* 256);
 		station = (pstation)malloc(sizeof(pstation) * o_epochnum* 256);
-        tem1 = (pxyz2blh)malloc(sizeof(pxyz2blh)* 512);
-        tem2 = (pxyz2blh)malloc(sizeof(pxyz2blh)* 512);
-        tem3 = (pblh2enu)malloc(sizeof(pblh2enu)* 512);
-        temb = (pdeg2dms)malloc(sizeof(pdeg2dms)* 512);
-        teml = (pdeg2dms)malloc(sizeof(pdeg2dms)* 512);
         for (int i = 0; i < o_epochnum; i++)//第i个历元
         {
             result_file = fopen(".\\Pos_out\\LLA_result_for_read.txt", "a+");
@@ -123,14 +118,14 @@ int sat_gps_pos_clac(FILE * result_file,
 
                 /* ----------------------------- 地固坐标系转经纬大地高坐标系 ----------------------------- */ 
                 tem1 = XYZ2BLH( tem1, pos_t[i].X[sPRN], pos_t[i].Y[sPRN], pos_t[i].Z[sPRN]);
-                blh->B = rad2deg(tem1->B);
-                blh->L = rad2deg(tem1->L);
-                blh->H = tem1->H;
+                blh->B = rad2deg(tem1.B);
+                blh->L = rad2deg(tem1.L);
+                blh->H = tem1.H;
 
                 tem2 = XYZ2BLH( tem2, obs_h->apX, obs_h->apY, obs_h->apZ);
-                station->B = tem2->B;
-                station->L = tem2->L;
-                station->H = tem2->H;
+                station->B = tem2.B;
+                station->L = tem2.L;
+                station->H = tem2.H;
                 /* -------------------------------------------------------------------------- */
                 
                 /* ----------------------------- 经纬大地高坐标系转站心坐标系 ----------------------------- */
@@ -139,16 +134,16 @@ int sat_gps_pos_clac(FILE * result_file,
                 double deltaz = pos_t[i].Z[sPRN] - obs_h->apZ;
                  
                 tem3 = BLH2ENU(tem3, station->B, station->L, deltax, deltay, deltaz);
-                enu->E = tem3->E;
-                enu->N = tem3->N;
-                enu->U = tem3->U;
+                enu->E = tem3.E;
+                enu->N = tem3.N;
+                enu->U = tem3.U;
                 /* -------------------------------------------------------------------------- */
 
                 /* ---------------------------- 卫星方位角a，高度角h，向径r计算 --------------------------- */
                 tem4 = RAHCAL(tem4, enu->E, enu->N, enu->U);
-                rah->R = tem4->R;
-                rah->A = rad2deg(tem4->A);
-                rah->H = rad2deg(tem4->H);
+                rah->R = tem4.R;
+                rah->A = rad2deg(tem4.A);
+                rah->H = rad2deg(tem4.H);
                 /* -------------------------------------------------------------------------- */
                 if (blh->H < 0 || nav_b[best_epoch].sHEA != 0)
                 { 
@@ -157,14 +152,14 @@ int sat_gps_pos_clac(FILE * result_file,
                 else
                 {   
                     temb = DEG2DMS(temb, blh->B);
-                    blh->B_d = temb->D;
-                    blh->B_m = temb->M;
-                    blh->B_s = temb->S;
+                    blh->B_d = temb.D;
+                    blh->B_m = temb.M;
+                    blh->B_s = temb.S;
 
                     teml = DEG2DMS(teml, blh->L);
-                    blh->L_d = teml->D;
-                    blh->L_m = teml->M;
-                    blh->L_s = teml->S;
+                    blh->L_d = teml.D;
+                    blh->L_m = teml.M;
+                    blh->L_s = teml.S;
 
                     result_file = fopen(".\\Pos_out\\LLA_result_for_read.txt", "a+");
                     fprintf(result_file, "\nG%02d[sPRN] %4d° %02d′ %02d″ %4d° %02d′ %02d″ %15.05f",sPRN, blh->B_d, blh->B_m, blh->B_s, blh->L_d, blh->L_m, blh->L_s, blh->H);

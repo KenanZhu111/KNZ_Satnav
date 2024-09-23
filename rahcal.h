@@ -11,7 +11,7 @@ typedef struct
     double R;
     double A;
     double H;
-}rahcal, *prahcal;
+}rahcal;
 
 /* -------------------------------------------------------------------------- */
 /// @brief 计算站心坐标系下的卫星高度方位角
@@ -21,17 +21,16 @@ typedef struct
 /// @param U 站心坐标天
 /// @return 返回自定义结构体变量包含R, A, H成员                        
 /* -------------------------------------------------------------------------- */
-prahcal RAHCAL(prahcal rahcal, 
-               double E, double N, double U)
+rahcal RAHCAL(rahcal rahcal, 
+              double E, double N, double U)
 {
-    rahcal = (prahcal)malloc(sizeof(prahcal));
-    rahcal->H = atan2(U, sqrt(E * E + N * N));
-    rahcal->A = atan2(E, U);
-    if (rahcal->A < 0)
-        rahcal->A += 2 * PI;
-    if (rahcal->A > 2 * PI)
-        rahcal->A -= 2 * PI;
-    rahcal->R = sqrt(E * E + N * N + U * U);
+    rahcal.H = atan2(U, sqrt(E * E + N * N));
+    rahcal.A = atan2(E, U);
+    if (rahcal.A < 0)
+        rahcal.A += 2 * PI;
+    if (rahcal.A > 2 * PI)
+        rahcal.A -= 2 * PI;
+    rahcal.R = sqrt(E * E + N * N + U * U);
 
     return rahcal;
 }
