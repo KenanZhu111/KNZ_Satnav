@@ -78,10 +78,10 @@ void sat_gps_pos_clac(FILE * result_file,
         deg2dms temb = {0};
         deg2dms teml = {0};
         blh = (pblh)malloc(sizeof(pblh) * o_epochnum* 256);
-		enu = (penu)malloc(sizeof(penu) * o_epochnum* 256);
-		rah = (prah)malloc(sizeof(prah) * o_epochnum* 256);
-		pos_t = (ppos_t)malloc(sizeof(ppos_t) * o_epochnum* 256);
-		station = (pstation)malloc(sizeof(pstation) * o_epochnum* 256);
+	enu = (penu)malloc(sizeof(penu) * o_epochnum* 256);
+	rah = (prah)malloc(sizeof(prah) * o_epochnum* 256);
+	pos_t = (ppos_t)malloc(sizeof(ppos_t) * o_epochnum* 256);
+	station = (pstation)malloc(sizeof(pstation) * o_epochnum* 256);
         for (int i = 0; i < o_epochnum; i++)//第i个历元
         {
             result_file = fopen(".\\Pos_out\\LLA_result.txt", "a+");
