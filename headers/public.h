@@ -71,9 +71,9 @@
     //东北天结构体
     typedef struct
     {
-	    double E;
-	    double N;
-	    double U;
+	double E;
+	double N;
+	double U;
     }enu, *penu;
 	//高度方位角结构体
     typedef struct
