@@ -9,29 +9,28 @@
 #define math_e  2.718281828459
 #define PI      3.141592653589793
 #define Earth_e 7.2921151467e-5
-#define C1      0
 /* ----------------------------- GPS OBSERV TYPE ---------------------------- */
-#define C1C     101
-#define C1S     102
-#define C1L     103
-#define C1X     104
-#define C1P     105
-#define C1W     106
-#define C1Y     107
-#define C1M     108
+#define C1C      1
+#define C1S      2
+#define C1L      3
+#define C1X      4
+#define C1P      5
+#define C1W      6
+#define C1Y      7
+#define C1M      8
 
-#define C2C     201
-#define C2S     202
-#define C2L     203
-#define C2X     204
-#define C2P     205
-#define C2W     206
-#define C2Y     207
-#define C2M     208
+#define C2C      9
+#define C2S     10
+#define C2L     11
+#define C2X     12
+#define C2P     13
+#define C2W     14
+#define C2Y     15
+#define C2M     16
 
-#define C5I     501
-#define C5Q     502
-#define C5X     503
+#define C5I     17
+#define C5Q     18
+#define C5X     19
 /* ------------------------------ FOR CALMOD.H ------------------------------ */
 #define MAXRINEX 1000
    //卫星位置结构体
@@ -70,14 +69,14 @@
         double H;
     }blh, *pblh;
     //东北天结构体
-    typedef struct enu
+    typedef struct
     {
 	    double E;
 	    double N;
 	    double U;
     }enu, *penu;
 	//高度方位角结构体
-    typedef struct rah
+    typedef struct
     {
         double R;
         double A;
@@ -178,13 +177,10 @@ typedef struct obs_head
 	double ANTH;//天线高
 	double ANTdeltaE;//天线中心对于测站标志在东方向上的偏移量
 	double ANTdeltaN;//天线中心对于测站标志在北方向上的偏移量
-	int WAFL1;//缺省的L1载波的波长因子
-	int WAFL2;//缺省的L2载波的波长因子
-	int WAFflag;
 	int obstypenum_gps;//GPS观测值类型数量
 	int obstypenum_bds;
-	char obstype_gps[36];//rinex3.04GPS观测值类型列表
-	char obstype_bds[36];
+	int  obscode_gps[36];//rinex3.04GPS观测值类型列表
+	int  obscode_bds[36];
 	double interval;//观测值的历元间隔
 	int f_y;//第一个观测记录的时刻
 	int f_m;

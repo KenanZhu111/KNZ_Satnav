@@ -1,10 +1,10 @@
 #ifndef _READ_H_
 #define _READ_H_
-
 #include<stdio.h>
 #include<string.h>
 
 #include"public.h"
+#include"type2code.h"
 /* ------------------------ 将字符串转换为浮点数,i起始位置，n输入多少个字符 ----------------------- */
 static double strtonum(const char* buff, int i, int n)
 {
@@ -84,13 +84,6 @@ extern void read_o_h(FILE* fp_obs, pobs_head obs_h)
 			obs_h->ANTdeltaN = strtonum(buff, 14 + 14, 14);
 			continue;
 		}
-		else if (strstr(lable, "WAVELENGTH FACT L1/2"))
-		{
-			obs_h->WAFL1 = (int)strtonum(buff, 0, 6);
-			obs_h->WAFL2 = (int)strtonum(buff, 6, 6);
-			obs_h->WAFflag = (int)strtonum(buff, 6 + 6, 6);
-			continue;
-		}
 		else if (strstr(lable, "SYS / # / OBS TYPES"))
 		{
 			char flag = {0};
@@ -102,19 +95,19 @@ extern void read_o_h(FILE* fp_obs, pobs_head obs_h)
 				{
 					for (i = 0; i < obs_h->obstypenum_gps; i++)
 					{
-						strncpy(&(obs_h->obstype_gps[i]), buff + 7 + 4 * i, 3);
+						obs_h->obscode_gps[i] = Type2Code(i, buff);
 					}
 				}
 				else if (obs_h->obstypenum_gps > 13)
 				{
 					for (i = 0; i < 13; i++)
 					{
-						strncpy(&(obs_h->obstype_gps[i]), buff + 7 + 4 * i, 3);
+						obs_h->obscode_gps[i] = Type2Code(i, buff);
 					}
 					fgets(buff, MAXRINEX, fp_obs);
 					for (i = 0; i < obs_h->obstypenum_gps - 13; i++)
 					{
-						strncpy(&(obs_h->obstype_gps[i + 13]), buff + 7 + 4 * i, 3);
+						obs_h->obscode_gps[i + 13] = Type2Code(i, buff);
 					}
 				}
 				continue;
@@ -126,19 +119,19 @@ extern void read_o_h(FILE* fp_obs, pobs_head obs_h)
 				{
 					for (i = 0; i < obs_h->obstypenum_bds; i++)
 					{
-						strncpy(&(obs_h->obstype_bds[i]), buff + 7 + 4 * i, 3);
+						obs_h->obscode_bds[i] = Type2Code(i, buff);
 					}
 				}
 				else if (obs_h->obstypenum_bds > 13)
 				{
 					for (i = 0; i < 13; i++)
 					{
-						strncpy(&(obs_h->obstype_bds[i]), buff + 7 + 4 * i, 3);
+						obs_h->obscode_bds[i] = Type2Code(i, buff);
 					}
 					fgets(buff, MAXRINEX, fp_obs);
 					for (i = 0; i < obs_h->obstypenum_bds - 13; i++)
 					{
-						strncpy(&(obs_h->obstype_bds[i + 13]), buff + 7 + 4 * i, 3);
+						obs_h->obscode_bds[i + 13] = Type2Code(i, buff);
 					}
 				}
 				continue;
@@ -213,7 +206,7 @@ extern void read_o_b(FILE* fp_obs, pobs_epoch obs_e, pobs_body obs_b, int type_g
 			else if (flag != 'G')//获取flag标识，判断GPS卫星为否
 			{	 
 				//判断是否为BDS卫星
-				 if (flag == 'C')//获取flag标识，判断BDS卫星为真，读取该卫星PRN号
+				if (flag == 'C')//获取flag标识，判断BDS卫星为真，读取该卫星PRN号
 				{
 					obs_e[n].sPRN[i] = strtonum(buff, 1, 2);//将卫星编号存储到第n个历元中，第i个PRN位置
 				 	obs_e[n].sPRN_BDS[j_c] = obs_e[n].sPRN[i];//将BDS卫星编号与总观测卫星号关联
@@ -232,11 +225,9 @@ extern void read_o_b(FILE* fp_obs, pobs_epoch obs_e, pobs_body obs_b, int type_g
 					strncpy(&flag, buff + 0, 1);
 				}
 			}
-
 		}		
 	n++;
-	}
-	
+	}	
 }
 
 /* -------------------------------------------------------------------------- */
@@ -244,7 +235,7 @@ extern void read_o_b(FILE* fp_obs, pobs_epoch obs_e, pobs_body obs_b, int type_g
 /* -------------------------------------------------------------------------- */
 
 /* ---------------------- 获取文件数据块行数，从END OF HEADER后开始起算 --------------------- */
-extern int getgpssatnum(FILE* fp_nav)
+int getgpssatnum(FILE* fp_nav)
 {
 	int gps_satnum = 0;
 	int flag = 0;
@@ -269,8 +260,7 @@ extern int getgpssatnum(FILE* fp_nav)
 					gps_satnum++;
 					break;	
 				}	
-			}
-											
+			}											
 		}
 
 		if (strstr(lable, "END OF HEADER"))

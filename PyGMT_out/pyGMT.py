@@ -9,7 +9,7 @@ import pygmt
 fig = pygmt.Figure()
 fig.coast(region="d",projection="Cyl_stere/12c",land="white",water="#C6E2FF",borders="1/0.2p",shorelines="1/0.2p",frame="ag")
 
-f = open("LLA_result_for_PyGMT.txt","r")
+f = open("LLA_result.txt","r")
 f.readline()
 string = f.readline()
 epoch = 0

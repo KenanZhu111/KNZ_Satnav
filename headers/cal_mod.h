@@ -6,17 +6,17 @@
 
 #include"public.h"
 
-#include"read.h"
 #include"2gpst.h"
-#include"select_epo.h"
+#include"rahcal.h"
 #include"xyz2blh.h"
 #include"degRrad.h"
 #include"deg2dms.h"
 #include"blh2enu.h"
-#include"rahcal.h"
+#include"type2code.h"
+#include"select_epo.h"
    
 /* ------------------------------- GPS卫星位置计算函数 ------------------------------ */
-int gps_pos(int eponum, int sPRN, int best_epoch, double GPSsec, 
+void gps_pos(int eponum, int sPRN, int best_epoch, double GPSsec, 
                 pnav_body nav_b, pobs_head obs_h, ppos_t pos_t)
     {    
         double T_S = GPSsec - pos_t[eponum].deltat[sPRN];//计算信号发射时刻
@@ -64,7 +64,7 @@ int gps_pos(int eponum, int sPRN, int best_epoch, double GPSsec,
 
 
 /* ------------------------------- GPS卫星位置计算&输出 ------------------------------ */
-int sat_gps_pos_clac(FILE * result_file, 
+void sat_gps_pos_clac(FILE * result_file, 
                      pnav_body nav_b, pobs_epoch obs_e, pobs_body obs_b,
                      pobs_head obs_h, pstation station, ppos_t pos_t, 
                      pblh blh, penu enu, prah rah, 
@@ -109,7 +109,7 @@ int sat_gps_pos_clac(FILE * result_file,
                 station[i].delta_TR == 0.0;
                 
                 //计算近似的信号传播时间,接收机钟差已初始化为0(伪距/光速-接收机钟差+卫星钟差)
-                pos_t[i].delta_t[sPRN] = (obs_b[i].obs_gps[j][C1] / C_V) - station[i].delta_TR + nav_b[best_epoch].sa0 + nav_b[best_epoch].sa1 * detat_toc + nav_b[best_epoch].sa2 * pow(detat_toc, 2);
+                pos_t[i].delta_t[sPRN] = (obs_b[i].obs_gps[j][Code2Type(C1C, obs_h->obstypenum_gps, obs_h->obscode_gps)] / C_V) - station[i].delta_TR + nav_b[best_epoch].sa0 + nav_b[best_epoch].sa1 * detat_toc + nav_b[best_epoch].sa2 * pow(detat_toc, 2);
                 
                 //判断收敛
                 pos_t[i].deltat[sPRN] = 0.0;
@@ -171,7 +171,10 @@ int sat_gps_pos_clac(FILE * result_file,
                     fclose(result_file);
                     result_file = fopen(".\\Result_out\\LLA_result.txt", "a+");
                     fprintf(result_file, "\nG%02d[sPRN] %15.05f %15.05f %15.05f %15.05f %15.05f %15.05f %15.12f %16.13f"
-                                            ,sPRN, pos_t[i].X[sPRN], pos_t[i].Y[sPRN], pos_t[i].Z[sPRN], obs_b[i].obs_gps[j][C1], obs_b[i].obs_gps[j][10], rah->H, nav_b[best_epoch].TGD, pos_t[i].delta_clk[sPRN]);
+                                            ,sPRN, pos_t[i].X[sPRN], pos_t[i].Y[sPRN], pos_t[i].Z[sPRN]
+                                            ,obs_b[i].obs_gps[j][Code2Type(C1C, obs_h->obstypenum_gps, obs_h->obscode_gps)]
+                                            ,obs_b[i].obs_gps[j][Code2Type(C2L, obs_h->obstypenum_gps, obs_h->obscode_gps)]
+                                            ,rah->H, nav_b[best_epoch].TGD, pos_t[i].delta_clk[sPRN]);
                     fclose(result_file);
                 }
 
@@ -207,7 +210,6 @@ int sat_gps_pos_clac(FILE * result_file,
         free(rah);rah = NULL;
         free(pos_t);pos_t = NULL;
         free(station);station = NULL;
-        return 1;
     }
 
 #endif
