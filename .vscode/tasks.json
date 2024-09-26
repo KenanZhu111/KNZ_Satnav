@@ -9,10 +9,15 @@
                 "-g",
                 "${file}",
                 "-o",
-                "${fileDirname}\\${fileBasenameNoExtension}.exe"
+                "${fileDirname}\\${fileBasenameNoExtension}.exe",
+                "-leasyx",
+                "-lmingw32",
+                "-lSDL2main",
+                "-lSDL2",
+                "-mwindows"
             ],
             "options": {
-                "cwd": "${fileDirname}"
+                "cwd": "C:\\Users\\34716\\mingw64\\bin"
             },
             "problemMatcher": [
                 "$gcc"
