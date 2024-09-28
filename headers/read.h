@@ -139,7 +139,7 @@ extern void read_o_h(FILE* fp_obs, pobs_head obs_h)
 		}
 		else if (strstr(lable, "INTERVAL"))
 		{
-			obs_h->interval = strtonum(buff, 0, 11);
+			obs_h->interval = strtonum(buff, 0, 10);
 			continue;
 		}
 		else if (strstr(lable, "TIME OF FIRST OBS"))
@@ -243,7 +243,7 @@ int getgpssatnum(FILE* fp_nav)
 	char satvar;
 	char* lable = buff + 60;
 	//fgets函数，读取一行，当读取结束后返回NULL指针，格式如下：
-	//char * fgets ( char * str, int num, FILE * stream );
+	//wchar_t * fgets ( wchar_t * str, int num, FILE * stream );
 	while (fgets(buff, MAXRINEX, fp_nav))
 	{
 		if (flag == 1)

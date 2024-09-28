@@ -33,7 +33,7 @@
 #define C5X     19
 /* ------------------------------ FOR CALMOD.H ------------------------------ */
 #define MAXRINEX 1000
-   //卫星位置结构体
+    //卫星位置结构体
     typedef struct
     {
         double X[36];
@@ -42,7 +42,7 @@
         double deltat[36];//改正前的信号传播时间
         double delta_t[36];//改正后的信号传播时间
         double delta_clk[36];
-    }pos_t, *ppos_t;
+    }pos_ts;
 
     //测站位置结构体
     typedef struct
@@ -54,7 +54,7 @@
         double L;
         double H;
         double delta_TR;
-    }station, *pstation;
+    }stations;
 	//经纬高结构体
     typedef struct
     {
@@ -67,21 +67,21 @@
         int L_m;
         int L_s;
         double H;
-    }blh, *pblh;
+    }blhs;
     //东北天结构体
     typedef struct
     {
 	    double E;
 	    double N;
 	    double U;
-    }enu, *penu;
+    }enus;
 	//高度方位角结构体
     typedef struct
     {
         double R;
         double A;
         double H;
-    }rah, *prah;
+    }rahs;
 /* ------------------------------- FOR READ.H ------------------------------- */
 //导航头文件结构体
 typedef struct nav_head
@@ -179,8 +179,8 @@ typedef struct obs_head
 	double ANTdeltaN;//天线中心对于测站标志在北方向上的偏移量
 	int obstypenum_gps;//GPS观测值类型数量
 	int obstypenum_bds;
-	int  obscode_gps[36];//rinex3.04GPS观测值类型列表
-	int  obscode_bds[36];
+	int obscode_gps[36];//rinex3.04GPS观测值类型列表
+	int obscode_bds[36];
 	double interval;//观测值的历元间隔
 	int f_y;//第一个观测记录的时刻
 	int f_m;
