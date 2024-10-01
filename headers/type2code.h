@@ -46,9 +46,9 @@ int Type2Code(int i, char buff[1000])
 int Code2Type(int typecode, int typenum, int typearr[36])
 {
     int pos;
-    for(pos = 0; pos < typenum; pos++)
+    for (pos = 0; pos < typenum; pos++)
     {
-        if(typearr[pos] == typecode)
+        if (typearr[pos] == typecode)
         {
             break;
         }

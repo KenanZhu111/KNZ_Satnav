@@ -19,12 +19,12 @@
 pos_ts gps_pos(int sPRN, int best_epoch, double GPSsec, 
              pnav_body nav_b, pobs_head obs_h, pos_ts pos_t)
     {    
-        double T_S = GPSsec - pos_t.deltat[sPRN];//计算信号发射时刻
+        double T_S = GPSsec - pos_t.delta_t[sPRN];//计算信号发射时刻
         double n_0 = sqrt(GM) / pow(nav_b[best_epoch].sqrtA,3);
         double n = n_0 + nav_b[best_epoch].deltan; //计算卫星运行平均角速度
         double tk = T_S - nav_b[best_epoch].TOE;//计算归化时间
         if (tk > 32400)tk -= 604800;
-	    else if (tk < -32400)tk += 604800;//规划时间改正
+	    else if (tk < -32400)tk += 604800;//归化时间改正
         double Ms = nav_b[best_epoch].M0 + n * tk;//计算卫星发射时卫星的平近角M
 	    double Es = Ms, E0;//迭代计算偏近点角
         do
@@ -51,14 +51,14 @@ pos_ts gps_pos(int sPRN, int best_epoch, double GPSsec,
         double X = x * cos(l) - y * cos(i) * sin(l);
         double Y = x * sin(l) + y * cos(i) * cos(l);
         double Z = y * sin(i);//卫星在地固系下的直角坐标
-        pos_t.X[sPRN] = cos(Earth_e * pos_t.delta_t[sPRN]) * X + sin(Earth_e * pos_t.delta_t[sPRN]) * Y;
+        pos_t.X[sPRN] =  cos(Earth_e * pos_t.delta_t[sPRN]) * X + sin(Earth_e * pos_t.delta_t[sPRN]) * Y;
         pos_t.Y[sPRN] = -sin(Earth_e * pos_t.delta_t[sPRN]) * X + cos(Earth_e * pos_t.delta_t[sPRN]) * Y;
         pos_t.Z[sPRN] = Z;
-        double R = sqrt(pow(pos_t.X[sPRN] - obs_h->apX, 2) + pow(pos_t.Y[sPRN] - obs_h->apY, 2) + pow(pos_t.Z[sPRN] - obs_h->apY, 2));
+        double R = sqrt(pow(pos_t.X[sPRN] - obs_h->apX, 2) + pow(pos_t.Y[sPRN] - obs_h->apY, 2) + pow(pos_t.Z[sPRN] - obs_h->apZ, 2));
         pos_t.deltat[sPRN] = pos_t.delta_t[sPRN];
-        pos_t.delta_t[sPRN] = R / C_V;
         double rela = 2*sqrt(GM) * nav_b[best_epoch].e * nav_b[best_epoch].sqrtA * sin(Es)/pow(C_V,2);
         pos_t.delta_clk[sPRN] = nav_b[best_epoch].sa0 + nav_b[best_epoch].sa1 * tk + nav_b[best_epoch].sa2 * pow(tk,2) - rela;
+        pos_t.delta_t[sPRN] = R / C_V + pos_t.delta_clk[sPRN];
         return pos_t;
     }
 /* -------------------------------------------------------------------------- */
@@ -105,7 +105,7 @@ void sat_gps_pos_clac(FILE * result_file,
                 //计算近似的信号传播时间,接收机钟差已初始化为0(伪距/光速-接收机钟差+卫星钟差)
                 pos_t.delta_t[sPRN] = (obs_b[i].obs_gps[j][Code2Type(C1C, obs_h->obstypenum_gps, obs_h->obscode_gps)] / C_V) - station.delta_TR + nav_b[best_epoch].sa0 + nav_b[best_epoch].sa1 * detat_toc + nav_b[best_epoch].sa2 * pow(detat_toc, 2);
                 pos_t.deltat[sPRN] = 0.0;//判断收敛
-                while (fabs(pos_t.delta_t[sPRN] - pos_t.deltat[sPRN]) > 0.00001){
+                while (fabs(pos_t.delta_t[sPRN] - pos_t.deltat[sPRN]) > 1.0e-9){
                     
                     pos_t = gps_pos(sPRN, best_epoch, GPSsec, nav_b, obs_h, pos_t);
                 }
@@ -139,9 +139,9 @@ void sat_gps_pos_clac(FILE * result_file,
                 rah.A = rad2deg(tem4.A);
                 rah.H = rad2deg(tem4.H);
                 /* -------------------------------------------------------------------------- */
-                if (blh.H < 0 ||nav_b[best_epoch].sHEA != 0)
+                if (blh.H < 0 || rah.H < 10 ||nav_b[best_epoch].sHEA != 0)
                 { 
-                    break;
+                    continue;
                 }
                 else
                 {   

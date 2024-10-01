@@ -21,7 +21,7 @@ extern int select_epoch(double SecofWeek, int sPRN, pnav_body nav_b, int gps_sat
 	int i;
 	for (i = 0; i < gps_satnum; i++)
 	{
-		if (sPRN == nav_b[i].sPRN)
+		if (sPRN == nav_b[i].sPRN_GPS)
 		{
 			Min = fabs(SecofWeek - nav_b[i].TOE);
 			if (Min <= min)

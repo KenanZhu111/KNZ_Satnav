@@ -1,11 +1,3 @@
-/*
- * @Author: KenanZhu111 3471685733@qq.com
- * @Date: 2024-09-27 19:05:41
- * @LastEditors: KenanZhu111 3471685733@qq.com
- * @LastEditTime: 2024-09-27 19:55:46
- * @FilePath: \Sat_Position_Solving_ver1.4.7\maingui.c
- * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
- */
 #include<stdio.h>
 #include<wchar.h>
 #include<stdlib.h>
@@ -16,19 +8,47 @@
 #include"headers/public.h"
 #include"headers/read.h"
 #include"headers/cal_mod.h" 
- 
+
 #pragma comment(linker,"\"/manifestdependency:type='win32' \
 name='Microsoft.Windows.Common-Controls' version='6.0.0.0' \
 processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
 
-#define FILEEXOP  TEXT("All Files(*.*)\0*.*\0"\
-					 "Obs Files(*.o*)\0*.20o;*.21o;*.22o;*.23o;*.24o\0"\
-					 "Nav Files(*.p*)\0*.20p;*.21p;*.22p;*.23p;*.24p\0\0");
-#define FILEEXSV  TEXT("All Files(*.*)\0*.*\0"\
-					 "Spos Files(*.sp*)\0*.sp\0\0");
+//FILE SELECT DIALOGS
+#define FILEEXOP  TEXT("Obs Files(*.o*)\0*.20o;*.21o;*.22o;*.23o;*.24o\0"\
+					 "All Files(*.*)\0*.*\0\0");
 
+#define FILEEXNP  TEXT("Nav Files(*.p*)\0*.20p;*.21p;*.22p;*.23p;*.24p\0"\
+					 "All Files(*.*)\0*.*\0\0")
 
-LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
+#define FILEEXSV  TEXT("Spos Files(*.sp*)\0*.sp\0"\
+					 "All Files(*.*)\0*.*\0\0");
+
+//DEF MAIN WINDOW BUTTONS
+#define OBSBUTTON	3301
+#define NAVBUTTON	3302
+#define CALBUTTON	3303
+#define OPTBUTTON	3304
+#define PLOBUTTON	3305
+#define OBSCLEAR	3306
+#define NAVCLEAR	3307
+//DEF MAIN WINDOW GNSS NUTTONS
+#define GPSCHECK	5500
+#define GLOCHECK	5501
+#define BEICHECK	5502
+#define GALCHECK	5503
+#define SBACHECK	5504
+#define SYSGROUP	1001
+//DEF OPTIONS WINDOW CHECK+BOXS
+#define OPTDFION	7001
+#define OPTDFTRO	7002
+#define OPTCONFI	7003
+
+HWND hwndb[13];//BUTTON HANDLE
+HWND hwndopt;//OPTIONS HANDLE
+HWND hwndopt_def_ion;//DEFAULT ION COR
+HWND hwndopt_def_tro;//DEFAULT TRO COR
+HWND hwndopt_confirm;//OPTION CONFIRM
+
 
 FILE * fp_nav      = NULL;     
 FILE * fp_obs      = NULL;     
@@ -39,19 +59,86 @@ pnav_body nav_b    = NULL;
 pobs_head obs_h    = NULL;
 pobs_epoch obs_e   = NULL;
 pobs_body obs_b    = NULL;
+
 int o_epochnum = 0;
 int gps_satnum = 0;
+int bds_satnum = 0;
+
+
+/*INITIAL SETTINGS*/
+static int ionoption = 0;
+static int trooption = 0;
+/* ------------- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+static int FileSelobsDialog(const wchar_t* path)//FILEDIALOG FOR OBS
+{
+	OPENFILENAME ofn;
+	ZeroMemory(&ofn, sizeof(ofn));
+	ofn.lStructSize = sizeof(ofn);
+	ofn.lpstrFile = path;
+	ofn.nMaxFile = MAX_PATH;
+	ofn.lpstrFilter = FILEEXOP;
+	ofn.lpstrTitle = TEXT("Open From");
+	ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
+	return GetOpenFileName(&ofn);
+}
+
+static int FileSelnavDialog(const wchar_t* path)//FILEDIALOG FOR NAV
+{
+	OPENFILENAME ofn;
+	ZeroMemory(&ofn, sizeof(ofn));
+	ofn.lStructSize = sizeof(ofn);
+	ofn.lpstrFile = path;
+	ofn.nMaxFile = MAX_PATH;
+	ofn.lpstrFilter = FILEEXNP;
+	ofn.lpstrTitle = TEXT("Open From");
+	ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
+	return GetOpenFileName(&ofn);
+}
+
+static int FileSaveDialog(const wchar_t* path)//FILEDIALOG FOR SAVE
+{
+	OPENFILENAME ofn;
+	ZeroMemory(&ofn, sizeof(ofn));
+	ofn.lStructSize = sizeof(ofn);
+	ofn.lpstrDefExt = TEXT(".sp");
+	ofn.lpstrFile = path;
+	ofn.nMaxFile = MAX_PATH;
+	ofn.lpstrFilter = FILEEXSV;
+	ofn.lpstrTitle = TEXT("Save To");
+	ofn.Flags = OFN_OVERWRITEPROMPT;
+	return GetSaveFileName(&ofn);
+}
+
+LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);//MAIN WINDOW
+LRESULT CALLBACK OptWndProc(HWND, UINT, WPARAM, LPARAM);//OPTION WINDOW
 
 int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPSTR lpCmdLine, _In_ int iCmdShow) {
 	
-	
 	WNDCLASS wndclass;
-	wndclass.style = CS_HREDRAW | CS_VREDRAW;
+	wndclass.style = CS_PARENTDC;
 	wndclass.lpfnWndProc = WndProc;
 	wndclass.cbClsExtra = 0;
 	wndclass.cbWndExtra = 0;
 	wndclass.hInstance = hInstance;
-	wndclass.hIcon = LoadIcon(NULL, IDI_APPLICATION);
+	wndclass.hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_ICON1));
 	wndclass.hCursor = LoadCursor(NULL, IDC_ARROW);
 	wndclass.hbrBackground = (HBRUSH)(COLOR_BTNFACE + 1);
 	wndclass.lpszMenuName = NULL;
@@ -59,11 +146,19 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 
 	RegisterClass(&wndclass);
 
+	wndclass.lpfnWndProc = OptWndProc;
+	wndclass.hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_ICON2));
+	wndclass.hbrBackground = (HBRUSH)(COLOR_BTNFACE + 1);
+	wndclass.lpszMenuName = NULL;
+	wndclass.lpszClassName = TEXT("OPT");
+
+	RegisterClass(&wndclass);
+
 	HWND hwnd;
 	hwnd = CreateWindow(
 		TEXT("SPP"),
 		TEXT("SPP Calculate"),
-		WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX,
+		WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX,
 		650, 
 		300, 
 		0, 
@@ -73,8 +168,29 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 		hInstance, 
 		NULL);
 
-	HFONT hFont = (HFONT)GetStockObject(SYSTEM_FIXED_FONT);
-	SendMessage(hwnd, WM_SETFONT, (WPARAM)hFont, 1);
+	HFONT hbFont;
+	hbFont = CreateFont(
+		15,
+		0,
+		0,
+		0,
+		FW_LIGHT,
+		FALSE,
+		FALSE,
+		FALSE,
+		DEFAULT_CHARSET,
+		OUT_OUTLINE_PRECIS,
+		CLIP_DEFAULT_PRECIS,
+		CLEARTYPE_QUALITY,
+		VARIABLE_PITCH,
+		TEXT("Segoe UI"));
+
+	SendMessage(hwnd, WM_SETFONT, (WPARAM)hbFont, 1);
+
+	for (int i = 0; i < 12; i++)
+	{
+		SendMessage(hwndb[i], WM_SETFONT, (WPARAM)hbFont, 1);
+	}
 
 	ShowWindow(hwnd, iCmdShow);
 	UpdateWindow(hwnd);
@@ -87,33 +203,6 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 	return msg.wParam;
 }
 
-int FileSelectDialog(const wchar_t *path)
-{
-	OPENFILENAME ofn;
-	ZeroMemory(&ofn, sizeof(ofn));
-	ofn.lStructSize = sizeof(ofn);
-	ofn.lpstrFile = path;
-	ofn.nMaxFile = MAX_PATH;
-	ofn.lpstrFilter = FILEEXOP;
-	ofn.lpstrTitle = TEXT("Open From");
-	ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST | OFN_SHOWHELP;
-	return GetOpenFileName(&ofn);
-}
-
-int FileSaveDialog(const wchar_t* path)
-{
-	OPENFILENAME ofn;
-	ZeroMemory(&ofn, sizeof(ofn));
-	ofn.lStructSize = sizeof(ofn);
-	ofn.lpstrDefExt = TEXT(".sp");
-	ofn.lpstrFile = path;
-	ofn.nMaxFile = MAX_PATH;
-	ofn.lpstrFilter = FILEEXSV;
-	ofn.lpstrTitle = TEXT("Save To");
-	ofn.Flags = OFN_OVERWRITEPROMPT | OFN_SHOWHELP;
-	return GetSaveFileName(&ofn);
-}
-
 LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam){
 
 	const wchar_t wobs_file[MAX_PATH] = { 0 };
@@ -121,156 +210,211 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam){
 	const wchar_t wres_file[MAX_PATH] = { 0 };
 	char obs_file[MAX_PATH] = { 0 };
 	char nav_file[MAX_PATH] = { 0 };
-	char res_file[MAX_PATH] = { 0 };
-
-	HWND hwndopt;
+	char res_file[MAX_PATH] = { 0 };//BE COMPATIBLE WITH MSVC
 
 	RECT rect;
-	TCHAR* SATSYS[5] = { TEXT("GPS"), TEXT("GLO"),TEXT("SBAS"), TEXT("BeiDou"), TEXT("Galileo") };
+	HBITMAP Delico;
+	TCHAR* SATSYS[5] = { TEXT("GPS"),TEXT("GLO"),TEXT("BeiDou"),TEXT("Galileo"),TEXT("SBAS") };
 	static int cxchar, cychar;
+
 	switch (msg) {
 	
 	case WM_CREATE:
 		cxchar = LOWORD(GetDialogBaseUnits());
-		cychar = HIWORD(GetDialogBaseUnits());
+		cychar = HIWORD(GetDialogBaseUnits());//GET THE SYS FONT SIZE
 
 		GetWindowRect(hwnd, &rect);
-		MoveWindow(hwnd, rect.left, rect.bottom, 50 * cxchar, 15 * cychar, TRUE);
+		MoveWindow(hwnd, rect.left, rect.bottom, 50 * cxchar, 15 * cychar, TRUE);//REPAINT THE MAIN WINDOW
 
-		CreateWindow(TEXT("Button"), TEXT("Load Obs file"), WS_VISIBLE|WS_CHILD|BS_PUSHBUTTON,  
+		//CREATE THE BUTTONS
+		hwndb[0] = CreateWindow(TEXT("Button"), TEXT("Open Obs Data"), WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON,
 		     cxchar,  5 * cychar,
-		16 * cxchar,  2 * cychar,
-		hwnd, (HMENU)3301, ((LPCREATESTRUCT)lParam)->hInstance, NULL);
-		CreateWindow(TEXT("Button"), TEXT("Load Nav file"), WS_VISIBLE|WS_CHILD|BS_PUSHBUTTON,  
+		14 * cxchar,  2 * cychar,
+		hwnd, (HMENU)OBSBUTTON, ((LPCREATESTRUCT)lParam)->hInstance, NULL);
+		hwndb[1] = CreateWindow(TEXT("Button"), TEXT("Open Nav Data"), WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON,
 		17 * cxchar,  5 * cychar,
-		16 * cxchar,  2 * cychar,
-		hwnd, (HMENU)3302, ((LPCREATESTRUCT)lParam)->hInstance, NULL);
-		CreateWindow(TEXT("Button"), TEXT("Sat-Position Calculate"), WS_VISIBLE|WS_CHILD|BS_PUSHBUTTON,  
+		14 * cxchar,  2 * cychar,
+		hwnd, (HMENU)NAVBUTTON, ((LPCREATESTRUCT)lParam)->hInstance, NULL);
+		hwndb[2] = CreateWindow(TEXT("Button"), TEXT("Sat-Position Calculate"), WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON,  
 			 cxchar,  7 * cychar,
 		32 * cxchar,  2 * cychar,
-		hwnd, (HMENU)3303, ((LPCREATESTRUCT)lParam)->hInstance, NULL);
-		CreateWindow(TEXT("Button"), TEXT("Options..."), WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON,
+		hwnd, (HMENU)CALBUTTON, ((LPCREATESTRUCT)lParam)->hInstance, NULL);
+		hwndb[3] = CreateWindow(TEXT("Button"), TEXT("Options..."), WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON,
 		36 * cxchar,  7 * cychar,
 		10 * cxchar,  2 * cychar,
-		hwnd, (HMENU)3304, ((LPCREATESTRUCT)lParam)->hInstance, NULL);
-		CreateWindow(TEXT("Button"), TEXT("Plot"), WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON,
+		hwnd, (HMENU)OPTBUTTON, ((LPCREATESTRUCT)lParam)->hInstance, NULL);
+		hwndb[4] = CreateWindow(TEXT("Button"), TEXT("Plot"), WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON,
 		36 * cxchar,  5 * cychar,
 		10 * cxchar,  2 * cychar,
-		hwnd, (HMENU)3304, ((LPCREATESTRUCT)lParam)->hInstance, NULL);
+		hwnd, (HMENU)PLOBUTTON, ((LPCREATESTRUCT)lParam)->hInstance, NULL);
 
 
 		for (int i = 0; i < 5; i++)
 		{
-			CreateWindow(TEXT("Button"), SATSYS[i], WS_VISIBLE|WS_CHILD|BS_AUTOCHECKBOX,
-							 (2 + 9 * i) * cxchar,  21 * cychar/2,
-							           8 * cxchar,   5 * cychar/3,
+			hwndb[i + 5] = CreateWindow(TEXT("Button"), SATSYS[i], WS_VISIBLE | WS_CHILD | BS_AUTOCHECKBOX,
+							 (2 + 7 * i) * cxchar,  21 * cychar/2,
+							           7 * cxchar,   5 * cychar/3,
 							  hwnd, (HMENU)(5500 + i), ((LPCREATESTRUCT)lParam)->hInstance, NULL);
 		}
+		hwndb[10] = CreateWindow(TEXT("Button"), TEXT("Satellite System"), WS_VISIBLE | WS_CHILD | BS_GROUPBOX,
+		   1 * cxchar/2, 19 * cychar/2,
+		    47 * cxchar,  6 * cychar/2,
+			hwnd, (HMENU)SYSGROUP, ((LPCREATESTRUCT)lParam)->hInstance, NULL);	
+		hwndb[11] = CreateWindow(TEXT("Button"), NULL, WS_VISIBLE | WS_CHILD | BS_BITMAP | BS_PUSHBUTTON,
+			15 * cxchar, 5 * cychar,
+			 2 * cxchar, 2 * cychar,
+			hwnd, (HMENU)OBSCLEAR, ((LPCREATESTRUCT)lParam)->hInstance, NULL);
+		hwndb[12] = CreateWindow(TEXT("Button"), NULL, WS_VISIBLE | WS_CHILD | BS_BITMAP | BS_PUSHBUTTON,
+			31 * cxchar, 5 * cychar,
+			 2 * cxchar, 2 * cychar,
+			hwnd, (HMENU)NAVCLEAR, ((LPCREATESTRUCT)lParam)->hInstance, NULL);
 
-		CreateWindow(TEXT("Button"), TEXT("GNSS"), WS_VISIBLE | WS_CHILD | BS_GROUPBOX,
-				 cxchar, 19 * cychar/2,
-			47 * cxchar,  6 * cychar/2,
-			hwnd, (HMENU)(1001), ((LPCREATESTRUCT)lParam)->hInstance, NULL);
 
 		return 0;
 	case WM_COMMAND:
 		switch(LOWORD(wParam))
 		{
-			case 3301: 
-				while(MessageBox(hwnd,TEXT("Please choose Obs file"),TEXT("NOTICE"),MB_ICONASTERISK|MB_YESNO) == IDYES)
+/* -------------------------- LOAD OBS DATA BUTTON -------------------------- */
+			case OBSBUTTON:
+				FileSelobsDialog(wobs_file);
+				wcstombs(obs_file, wobs_file, MAX_PATH);
+				fp_obs = fopen(obs_file, TEXT("r"));
+				if (fp_obs != NULL)
 				{
-					FileSelectDialog(wobs_file);
-					wcstombs(obs_file, wobs_file, MAX_PATH);
-					fp_obs = fopen(obs_file, TEXT("r"));
-					if (fp_obs != NULL)
+					o_epochnum = get_epochnum(fp_obs);
+					rewind(fp_obs);
+					obs_h = (pobs_head)malloc(sizeof(obs_head));
+					obs_e = (pobs_epoch)malloc(sizeof(obs_epoch) * o_epochnum);
+					obs_b = (pobs_body)malloc(sizeof(obs_body) * o_epochnum);
+					if (obs_h && obs_e && obs_b)
 					{
-						o_epochnum = get_epochnum(fp_obs);
-						rewind(fp_obs);
-						obs_h = (pobs_head)malloc(sizeof(obs_head));
-						obs_e = (pobs_epoch)malloc(sizeof(obs_epoch) * o_epochnum);
-						obs_b = (pobs_body)malloc(sizeof(obs_body) * o_epochnum);
-						if (obs_h && obs_e && obs_b)
-						{
-							read_o_h(fp_obs, obs_h);
-							read_o_b(fp_obs, obs_e, obs_b, obs_h->obstypenum_gps, obs_h->obstypenum_bds);
-						}
-						fclose(fp_obs);
-						if (o_epochnum > 0)
-						{
-							MessageBox(hwnd, TEXT("File of Obs load complete!"), TEXT("NOTICE"), MB_ICONASTERISK);
-							break;
-						}
+						read_o_h(fp_obs, obs_h);
+						read_o_b(fp_obs, obs_e, obs_b, obs_h->obstypenum_gps, obs_h->obstypenum_bds);
 					}
-					else
+					fclose(fp_obs);
+					if (o_epochnum > 0)
+					{
+						MessageBox(hwnd, TEXT("File of Obs load complete!"), TEXT("NOTICE"), MB_ICONASTERISK | MB_OK);
 						break;
+					}
 				}
 				break;
 				return 0;
-			case 3302:
-				while(MessageBox(hwnd,TEXT("Please choose Nav file"),TEXT("NOTICE"),MB_ICONASTERISK|MB_YESNO) == IDYES)
+/* -------------------------- LOAD NAV DATA BUTTON -------------------------- */
+			case NAVBUTTON:
+				FileSelnavDialog(wnav_file);
+				wcstombs(nav_file, wnav_file, MAX_PATH);
+				fp_nav = fopen(nav_file, TEXT("r"));
+				if (fp_nav != NULL)
 				{
-					FileSelectDialog(wnav_file);
-					wcstombs(nav_file, wnav_file, MAX_PATH);
-					fp_nav = fopen(nav_file, TEXT("r"));
-					if (fp_nav != NULL)
+					gps_satnum = getgpssatnum(fp_nav);
+					rewind(fp_nav);
+					bds_satnum = getbdssatnum(fp_nav);
+					rewind(fp_nav);
+					nav_h = (pnav_head)malloc(sizeof(nav_head));
+					nav_b = (pnav_body)malloc(sizeof(nav_body) * (gps_satnum + bds_satnum));
+					if (nav_h && nav_b)
 					{
-						gps_satnum = getgpssatnum(fp_nav);
-						rewind(fp_nav);
-						nav_h = (pnav_head)malloc(sizeof(nav_head));
-						nav_b = (pnav_body)malloc(sizeof(nav_body) * gps_satnum * 2);
-						if (nav_h && nav_b)
-						{
-							read_n_h(fp_nav, nav_h);
-							read_n_b(fp_nav, nav_b);
-						}
-						fclose(fp_nav);
-						if (gps_satnum > 0)
-						{
-							MessageBox(hwnd, TEXT("File of Nav load complete!"), TEXT("NOTICE"), MB_ICONASTERISK);
-							break;
-						}
+						read_n_h(fp_nav, nav_h);
+						read_n_b(fp_nav, nav_b);
 					}
-					else
+					fclose(fp_nav);
+					if (gps_satnum > 0)
+					{
+						MessageBox(hwnd, TEXT("File of Nav load complete!"), TEXT("NOTICE"), MB_ICONASTERISK | MB_OK);
 						break;
+					}
 				}
 				break;
 				return 0;
-			case 3303:
-				if (fp_obs == NULL || fp_nav == NULL)
+/* ---------------------------- CALCAULATE BUTTON --------------------------- */
+			case CALBUTTON:
+				if (fp_obs == NULL && fp_nav == NULL)
 				{
-					MessageBox(hwnd, TEXT("No Data File!"), TEXT("WARNING"), MB_ICONERROR | MB_OK);
+					MessageBox(hwnd, TEXT("No Data File!"), TEXT("STOP"), MB_ICONERROR | MB_OKCANCEL | MB_DEFBUTTON1);
+				}
+				else if (fp_obs == NULL && fp_nav != NULL)
+				{
+					MessageBox(hwnd, TEXT("No Obs Data File!"), TEXT("STOP"), MB_ICONERROR | MB_OKCANCEL | MB_DEFBUTTON1);
+				}
+				else if (fp_obs != NULL && fp_nav == NULL)
+				{
+					MessageBox(hwnd, TEXT("No Nav Data File!"), TEXT("STOP"), MB_ICONERROR | MB_OKCANCEL | MB_DEFBUTTON1);
 				}
 				else if (fp_obs != NULL && fp_nav != NULL)
 				{
-					while(1)
+					int ALLSTATE = 0x0000;
+					for (int i = 0; i < 5; i++){ALLSTATE += SendMessage(hwndb[i + 5], BM_GETCHECK, wParam, lParam);}
+					if (ALLSTATE == 0x0000)
+					{
+						while (1)
+						{
+							if (MessageBox(hwnd, TEXT("No GNSS is choosen\nPlease Retry"), TEXT("NOTICE"), MB_ICONERROR | MB_RETRYCANCEL) == IDRETRY)
+							{
+								break;
+							}
+						}
+					}
+					else
 					{
 						FileSaveDialog(wres_file);
-						if (wres_file == TEXT(""))
+						wcstombs(res_file, wres_file, MAX_PATH);
+						if (res_file[0] == '\0')
 						{
-							break;
+							while (MessageBox(hwnd, TEXT("Failed to select a save path.\nThe data has been cleared!"), TEXT("WARNING"), MB_ICONWARNING | MB_OK) == IDOK)
+							{
+								break;
+							}
 						}
 						else
 						{
-							wcstombs(res_file, wres_file, MAX_PATH);
-							sat_gps_pos_clac(result_file, nav_b, obs_e, obs_b, obs_h, o_epochnum, gps_satnum, res_file);
-							free(obs_h); free(obs_e); free(obs_b); free(nav_h); free(nav_b);
-							fp_nav = NULL; fp_obs = NULL; result_file = NULL;
-							break;
+							if (SendMessage(hwndb[5], BM_GETCHECK, wParam, lParam) == BST_CHECKED)
+							{
+								sat_gps_pos_clac(result_file, nav_b, obs_e, obs_b, obs_h, o_epochnum, gps_satnum, res_file);
+							}
 						}
-						
+						free(obs_h); free(obs_e); free(obs_b); free(nav_h); free(nav_b);
+						fp_nav = NULL; fp_obs = NULL; result_file = NULL;
+						nav_h = NULL; nav_b = NULL; obs_h = NULL; obs_e = NULL; obs_b = NULL;
 					}
-					
 				}
 				break;
 				return 0;
-			case 3304:
+/* ----------------------------- OPTIONS BUTTON ----------------------------- */
+			case OPTBUTTON:
+				DestroyWindow(hwndopt);
+				hwndopt = CreateWindow(TEXT("OPT"), TEXT("Options"), WS_CAPTION | WS_SYSMENU,
+					650, 300,
+					0, 0,
+				NULL, NULL, GetWindowLongPtr(hwndopt, GWLP_HINSTANCE), NULL);
+				HFONT hbFont;
+				hbFont = CreateFont(
+					15,0,0,0,
+					FW_LIGHT,FALSE,FALSE,FALSE,
+					DEFAULT_CHARSET,OUT_OUTLINE_PRECIS,
+					CLIP_DEFAULT_PRECIS,CLEARTYPE_QUALITY,
+					VARIABLE_PITCH,TEXT("Segoe UI"));
+				
+					SendMessage(hwndopt_def_ion, WM_SETFONT, (WPARAM)hbFont, 1);
+					SendMessage(hwndopt_def_tro, WM_SETFONT, (WPARAM)hbFont, 1);
+					SendMessage(hwndopt_confirm, WM_SETFONT, (WPARAM)hbFont, 1);//SEND FONT SETTING MESSAGE
+					while (ionoption == 1) { SendMessage(hwndopt_def_ion, BM_SETCHECK, wParam, lParam); break; };
+					while (trooption == 1) { SendMessage(hwndopt_def_tro, BM_SETCHECK, wParam, lParam); break; };//SEND SETTING STATE MESSAGE
 
 				break;
 				return 0;
+/* ------------------------------- PLOT BUTTON ------------------------------ */
+			case PLOBUTTON:
+
+				break;
+				return 0;
+/* ------------------------------- DEFAULT MSG ------------------------------ */
+			default:
+				return DefWindowProc(hwnd, msg, wParam, lParam);
 		} 
 		return 0;
 	case WM_CLOSE:
-		if(MessageBox(hwnd, TEXT("You're shutting the program"), TEXT("Confirm"), MB_YESNO | MB_ICONASTERISK) == IDYES )
+		if(MessageBox(hwnd, TEXT("You're shutting the program"), TEXT("NOTICE"), MB_OKCANCEL | MB_ICONASTERISK) == IDOK )
 			DestroyWindow(hwnd);
 		else
 			return 0;
@@ -279,4 +423,63 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam){
 		return 0;
 	}
 	return DefWindowProc(hwnd, msg, wParam, lParam);
+}
+
+LRESULT CALLBACK OptWndProc(HWND hwndopt, UINT msg, WPARAM wParam, LPARAM lParam)
+{
+	static int cxchar, cychar;
+	RECT rect;
+	switch (msg)
+	{
+	case WM_CREATE:
+		cxchar = LOWORD(GetDialogBaseUnits());
+		cychar = HIWORD(GetDialogBaseUnits());
+		GetWindowRect(hwndopt, &rect);
+		MoveWindow(hwndopt, rect.left, rect.bottom, 30 * cxchar, 7 * cychar, TRUE);
+		ShowWindow(hwndopt, SW_SHOWDEFAULT);
+		UpdateWindow(hwndopt);
+		hwndopt_def_ion = CreateWindow(TEXT("BUTTON"), TEXT("Use Default ION_COR"), WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX,
+			2 * cxchar, 0, 18 * cxchar, 2 * cychar, hwndopt, (HMENU)OPTDFION, ((LPCREATESTRUCT)lParam)->hInstance, NULL);
+		hwndopt_def_tro = CreateWindow(TEXT("BUTTON"), TEXT("Use Default TRO_COR"), WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX,
+			2 * cxchar, 2 * cychar, 18 * cxchar, 2 * cychar, hwndopt, (HMENU)OPTDFTRO, ((LPCREATESTRUCT)lParam)->hInstance, NULL);
+		hwndopt_confirm = CreateWindow(TEXT("BUTTON"), TEXT("Confirm"), WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON,
+		   20 * cxchar, 5 * cychar/2,  7 * cxchar, 3 * cychar/2, hwndopt, (HMENU)OPTCONFI, ((LPCREATESTRUCT)lParam)->hInstance, NULL);
+		
+
+		break;
+		return 0;
+	case WM_COMMAND:
+		switch (LOWORD(wParam))
+		{
+		case OPTDFION:
+
+			break;
+			return 0;
+		case OPTDFTRO:
+
+			break;
+			return 0;
+		case OPTCONFI:
+			if (SendMessage(hwndopt_def_ion, BM_GETCHECK, wParam, lParam) == BST_CHECKED){ionoption = 1;}
+			else{ionoption = 0;}
+			if (SendMessage(hwndopt_def_tro, BM_GETCHECK, wParam, lParam) == BST_CHECKED){trooption = 1;}
+			else{trooption = 0;}//GET CHECKBOX'S SETTINGS
+
+			DestroyWindow(hwndopt);
+			break;
+			return 0;
+		}
+		break;
+		return 0;
+	case WM_CLOSE:
+		DestroyWindow(hwndopt);
+		break;
+		return 0;
+	case WM_DESTROY:
+		break;
+		return 0;
+	default:
+		return DefWindowProc(hwndopt, msg, wParam, lParam);
+	}
+	return 0;
 }

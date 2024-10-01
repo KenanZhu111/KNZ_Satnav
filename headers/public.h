@@ -109,9 +109,9 @@ typedef struct nav_head
 //导航数据结构体
 typedef struct nav_body
 {
-	//数据块第一行内容：
-	int sPRN;//卫星PRN号
-	//历元：TOC中卫星钟的参考时刻
+
+	int sPRN_GPS;//GPS卫星PRN
+	int sPRN_BDS;//GPS卫星PRN
 	int TOC_Y;//年
 	int TOC_M;//月
 	int TOC_D;//日
@@ -122,43 +122,36 @@ typedef struct nav_body
 	double sa1;//卫星钟偏
 	double sa2;//卫星钟漂
  
-	//数据块第二行内容：
 	double IODE;//数据、星历发布时间(数据期龄)
 	double Crs;//轨道半径的正弦调和改正项的振幅（单位：m）
 	double deltan;//卫星平均运动速率与计算值之差(rad/s)
 	double M0;//参考时间的平近点角(rad)
  
-	//数据块第三行内容：
 	double Cuc;//维度幅角的余弦调和改正项的振幅(rad)
 	double e;//轨道偏心率
 	double Cus;//轨道幅角的正弦调和改正项的振幅(rad)
 	double sqrtA;//长半轴平方根
  
-	//数据块第四行内容：
 	double TOE;//星历的参考时刻(GPS周内秒)
 	double Cic;//轨道倾角的余弦调和改正项的振幅(rad)
 	double OMEGA;//参考时刻的升交点赤经
 	double Cis;//维度倾角的正弦调和改正项的振幅(rad)
  
-    //数据块第五行内容：
 	double i0;//参考时间的轨道倾角(rad)
 	double Crc;//轨道平径的余弦调和改正项的振幅(m)
 	double omega;//近地点角距
 	double deltaomega;//升交点赤经变化率(rad)
  
-	//数据块第六行内容：
 	double IDOT;//近地点角距(rad/s)
 	double L2code;//L2上的码
 	double GPSweek;//GPS周,于TOE一同表示
 	double L2Pflag;//L2,p码数据标记
  
-	//数据块第七行内容
 	double sACC;//卫星精度
 	double sHEA;//卫星健康状态
 	double TGD;//sec
 	double IODC;//钟的数据龄期
  
-	//数据块第八行内容
 	double TTN;//电文发送时间
 	double fit;//拟合区间
 	double spare1;//空

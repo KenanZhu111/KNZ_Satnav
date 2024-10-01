@@ -57,6 +57,8 @@ extern int get_epochnum(FILE* fp_obs)
 /* -------------------------------- 读取O文件数据头 -------------------------------- */
 extern void read_o_h(FILE* fp_obs, pobs_head obs_h)
 {
+	memset(obs_h->obscode_gps, 0, sizeof(obs_h->obscode_gps));
+	memset(obs_h->obscode_bds, 0, sizeof(obs_h->obscode_bds));
 	char buff[MAXRINEX] = { 0 };
 	char flag = { 0 };
 	char* lable = buff + 60;
@@ -95,7 +97,7 @@ extern void read_o_h(FILE* fp_obs, pobs_head obs_h)
 				{
 					for (i = 0; i < obs_h->obstypenum_gps; i++)
 					{
-						obs_h->obscode_gps[i] = Type2Code(i, buff);
+						obs_h->obscode_gps[i + 1] = Type2Code(i, buff);
 					}
 				}
 				else if (obs_h->obstypenum_gps > 13)
@@ -186,6 +188,12 @@ extern void read_o_b(FILE* fp_obs, pobs_epoch obs_e, pobs_body obs_b, int type_g
 		//输入卫星数
 		obs_e[n].sat_num = strtonum(buff, 33, 3);
 		strncpy(&flag, buff + 0, 1);
+
+		memset(obs_e[n].sPRN, 0, sizeof(obs_e[n].sPRN));
+		memset(obs_e[n].sPRN_GPS, 0, sizeof(obs_e[n].sPRN_GPS));
+		memset(obs_e[n].sPRN_BDS, 0, sizeof(obs_e[n].sPRN_BDS));
+		memset(obs_b[n].obs_gps, 0, sizeof(obs_b[n].obs_gps));
+		memset(obs_b[n].obs_bds, 0, sizeof(obs_b[n].obs_bds));
 		
 		for (i = 0; i < obs_e[n].sat_num; i++)
 		{									
@@ -246,6 +254,10 @@ int getgpssatnum(FILE* fp_nav)
 	//wchar_t * fgets ( wchar_t * str, int num, FILE * stream );
 	while (fgets(buff, MAXRINEX, fp_nav))
 	{
+		if (strstr(lable, "END OF HEADER"))
+		{
+			flag = 1;
+		}
 		if (flag == 1)
 		{
 			while (fgets(buff, MAXRINEX, fp_nav))
@@ -262,13 +274,43 @@ int getgpssatnum(FILE* fp_nav)
 				}	
 			}											
 		}
+	}
+	return gps_satnum;
+}
 
+int getbdssatnum(FILE* fp_nav)
+{
+	int bds_satnum = 0;
+	int flag = 0;
+	char buff[MAXRINEX];//用来存放读取到的字符串
+	char satvar;
+	char* lable = buff + 60;
+	//fgets函数，读取一行，当读取结束后返回NULL指针，格式如下：
+	//wchar_t * fgets ( wchar_t * str, int num, FILE * stream );
+	while (fgets(buff, MAXRINEX, fp_nav))
+	{
 		if (strstr(lable, "END OF HEADER"))
 		{
 			flag = 1;
 		}
+		if (flag == 1)
+		{
+			while (fgets(buff, MAXRINEX, fp_nav))
+			{
+				strncpy(&satvar, buff + 0, 1);
+				if (satvar != 'C')
+				{
+					continue;
+				}
+				else if (satvar == 'C')
+				{
+					bds_satnum++;
+					break;
+				}
+			}
+		}
 	}
-	return gps_satnum;
+	return bds_satnum;
 }
 
 /* -------------------------------- 读取N文件数据头 -------------------------------- */
@@ -347,23 +389,23 @@ void read_n_h(FILE* fp_nav, pnav_head nav_h)
 /* -------------------------------- 读取N文件数据块 -------------------------------- */
 void read_n_b(FILE* fp_nav, pnav_body nav_b)
 {
-	int i_g = 0;//第i_g个GPS卫星数据
-	int i_c = 0;//第i_c个BDS卫星数据
+	int i_g = 0;//第i_g个卫星数据
 	char buff[84] = { 0 };
 	char flag = { 0 };//判断符号
 	while (fgets(buff, MAXRINEX, fp_nav))
 	{
 		int j_g = 0;//数据块的第j_g行数据
-		int j_c = 0;//数据块的第j_C行数据
+		int j_c = 0;//数据块的第j_c行数据
 		strncpy(&flag, buff + 0, 1);
 		if(flag == 'G')
 		{
-			for (j_g = 0; j_g < 8; j_g++)//读取第i_g颗 GPS卫星广播星历("总共包含8行数据") 数据块的第j_g行数据
+			for (j_g = 0; j_g < 8; j_g++)//读取总计第i_g颗 GPS卫星广播星历("总共包含8行数据") 数据块的第j_g行数据
 			{
 				switch (j_g)
 				{
 				case 0:
-					nav_b[i_g].sPRN = (int)strtonum(buff, 1, 2);
+					nav_b[i_g].sPRN_BDS = 0;
+					nav_b[i_g].sPRN_GPS = (int)strtonum(buff, 1, 2);
 					nav_b[i_g].TOC_Y = (int)strtonum(buff, 4, 4);
 					nav_b[i_g].TOC_M = (int)strtonum(buff, 9, 2);
 					nav_b[i_g].TOC_D = (int)strtonum(buff, 12, 2);
@@ -428,9 +470,77 @@ void read_n_b(FILE* fp_nav, pnav_body nav_b)
 			i_g++;
 			continue;
 		}
-		else if(flag != 'G')
+		else if(flag == 'C')
 		{
-			fgets(buff, MAXRINEX, fp_nav);
+			for (j_c = 0; j_c < 8; j_c++)//读取总计第i_g颗 BDS卫星广播星历("总共包含8行数据") 数据块的第j_c行数据
+			{
+				switch (j_c)
+				{
+				case 0:
+					nav_b[i_g].sPRN_GPS = 0;
+					nav_b[i_g].sPRN_BDS = (int)strtonum(buff, 1, 2);
+					nav_b[i_g].TOC_Y = (int)strtonum(buff, 4, 4);
+					nav_b[i_g].TOC_M = (int)strtonum(buff, 9, 2);
+					nav_b[i_g].TOC_D = (int)strtonum(buff, 12, 2);
+					nav_b[i_g].TOC_H = (int)strtonum(buff, 15, 2);
+					nav_b[i_g].TOC_Min = (int)strtonum(buff, 18, 2);
+					nav_b[i_g].TOC_Sec = strtonum(buff, 21, 2);
+					nav_b[i_g].sa0 = strtonum(buff, 23, 19);
+					nav_b[i_g].sa1 = strtonum(buff, 23 + 19, 19);
+					nav_b[i_g].sa2 = strtonum(buff, 23 + 19 + 19, 19);
+					fgets(buff, MAXRINEX, fp_nav);
+					break;
+				case 1:
+					nav_b[i_g].IODE = strtonum(buff, 4, 19);
+					nav_b[i_g].Crs = strtonum(buff, 4 + 19, 19);
+					nav_b[i_g].deltan = strtonum(buff, 4 + 19 + 19, 19);
+					nav_b[i_g].M0 = strtonum(buff, 4 + 19 + 19 + 19, 19);
+					fgets(buff, MAXRINEX, fp_nav);
+					break;
+				case 2:
+					nav_b[i_g].Cuc = strtonum(buff, 4, 19);
+					nav_b[i_g].e = strtonum(buff, 4 + 19, 19);
+					nav_b[i_g].Cus = strtonum(buff, 4 + 19 + 19, 19);
+					nav_b[i_g].sqrtA = strtonum(buff, 4 + 19 + 19 + 19, 19);
+					fgets(buff, MAXRINEX, fp_nav);
+					break;
+				case 3:
+					nav_b[i_g].TOE = strtonum(buff, 4, 19);
+					nav_b[i_g].Cic = strtonum(buff, 4 + 19, 19);
+					nav_b[i_g].OMEGA = strtonum(buff, 4 + 19 + 19, 19);
+					nav_b[i_g].Cis = strtonum(buff, 4 + 19 + 19 + 19, 19);
+					fgets(buff, MAXRINEX, fp_nav);
+					break;
+				case 4:
+					nav_b[i_g].i0 = strtonum(buff, 4, 19);
+					nav_b[i_g].Crc = strtonum(buff, 4 + 19, 19);
+					nav_b[i_g].omega = strtonum(buff, 4 + 19 + 19, 19);
+					nav_b[i_g].deltaomega = strtonum(buff, 4 + 19 + 19 + 19, 19);
+					fgets(buff, MAXRINEX, fp_nav);
+					break;
+				case 5:
+					nav_b[i_g].IDOT = strtonum(buff, 4, 19);
+					nav_b[i_g].L2code = strtonum(buff, 4 + 19, 19);
+					nav_b[i_g].GPSweek = strtonum(buff, 4 + 19 + 19, 19);
+					nav_b[i_g].L2Pflag = strtonum(buff, 4 + 19 + 19 + 19, 19);
+					fgets(buff, MAXRINEX, fp_nav);
+					break;
+				case 6:
+					nav_b[i_g].sACC = strtonum(buff, 4, 19);
+					nav_b[i_g].sHEA = strtonum(buff, 4 + 19, 19);
+					nav_b[i_g].TGD = strtonum(buff, 4 + 19 + 19, 19);
+					nav_b[i_g].IODC = strtonum(buff, 4 + 19 + 19 + 19, 19);
+					fgets(buff, MAXRINEX, fp_nav);
+					break;
+				case 7:
+					nav_b[i_g].TTN = strtonum(buff, 4, 19);
+					nav_b[i_g].fit = strtonum(buff, 4 + 19, 19);
+					nav_b[i_g].spare1 = strtonum(buff, 4 + 19 + 19, 19);
+					nav_b[i_g].spare2 = strtonum(buff, 4 + 19 + 19 + 19, 19);
+					break;
+				}
+			}
+			i_g++;
 			continue;
 		}		
 	}

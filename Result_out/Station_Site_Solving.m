@@ -1,6 +1,6 @@
 function [ENU] = Station_Site_Solving()
 % 打开坐标文件
-file=fopen('LLA_result.txt');       
+file=fopen('111.sp');       
 sPRN = [];
 satX = [];
 satY = [];
@@ -41,7 +41,8 @@ while ~feof(file)
                 satnum = satnum + 1;
                 P_t1(eponum, satnum) = str2double(extractBetween(line,11 + 16 + 16 + 16               ,25 + 16 + 16 + 16 ));
                 if P_t1(eponum, satnum) ~= 0
-                    sPRN(eponum, satnum) = str2double(extractBetween(line,2 ,3 ));
+                    prnnum = str2double(extractBetween(line,2 ,3 ));
+                    sPRN(eponum, prnnum) = str2double(extractBetween(line,2 ,3 ));
                     satX(eponum, satnum) = str2double(extractBetween(line,11                                   ,25 ));
                     satY(eponum, satnum) = str2double(extractBetween(line,11 + 16                              ,25 + 16 ));
                     satZ(eponum, satnum) = str2double(extractBetween(line,11 + 16 + 16                         ,25 + 16 + 16 ));
@@ -95,8 +96,30 @@ for i = 1:1:eponum
             B(j, 3) = -((satZ(i, j) - apZ) / R);
             B(j, 4) = 1;
 
-%           简化的Hopfield模型
-            dtrop = 2.47/sind(H(i, j))+0.0121;
+% %           简化的Hopfield模型
+%             dtrop = 2.47/sind(H(i, j))+0.0121;
+
+% % % % % %             
+            P0 = 1013.25; e0 = 11.69; T0 = 288.15;
+%           求大气压强
+            p = P0 * (1.0 - 0.0068 / T0 / apH)^5;
+%           求开尔文温度
+            T = 288.15 - 0.0068 * apH;
+%           水汽压计算
+            if apH  > 11000
+                e = 0;
+            end
+            if apH <= 11000
+                e = e0 * (1.0 - 0.0068 * apH / T0)^4;
+            end
+            deltaSd = 0.00001552 * p / T * (40136 + 148.72 * (T - 273.16) - apH);
+            deltaSw = 0.0746512 * e / T^2 * (11000 - apH);
+%           对流层延迟干分量
+            dtropd = deltaSd / sqrt(sind( rad2deg(deg2rad(H(i, j)) ^ 2) + 6.25 ) );
+%           对流层延迟湿分量
+            dtropw = deltaSw / sqrt(sind( rad2deg(deg2rad(H(i, j)) ^ 2) + 6.25 ) );
+            dtrop = 0.1 * dtropw + 0.9 * dtropd;
+% % % % % % % % % % % % % % % % % % % % % % % %
 
 % % % % % % % 理想化的Saastamoinen模型/对流层改正
 %             P0 = 1013.25; e0 = 11.69; T0 = 288.15;
@@ -124,9 +147,6 @@ for i = 1:1:eponum
             P_t = P_t1(i, j);
             end
             l(j, 1) = P_t - R + C_V * Dt(i,j) - dtrop;
-            if H(i, j)<5
-               H(i, j) = H(i, j);
-            end
 
             P(j, j) = sind(H(i, j))^2;
         end
@@ -172,12 +192,12 @@ end
 
 %绘制结果图
 figure("Position",[200, 700,1000,200],"Name", "East component deviation","NumberTitle","off")
-bar(ENU(1,:))%E
+plot(ENU(1,:));%E
 box off
 figure("Position",[200, 400,1000,200],"Name","North component deviation","NumberTitle","off")
-bar(ENU(2,:))%N
+plot(ENU(2,:));%N
 box off
 figure("Position",[200, 100,1000,200],"Name",   "Up component deviation","NumberTitle","off")
-bar(ENU(3,:))%U
+plot(ENU(3,:));%U
 box off
 
