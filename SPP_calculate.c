@@ -4,7 +4,10 @@
 #include<string.h>
 #include<windows.h>
 #include<Commdlg.h>
+#include<commctrl.h>
+#pragma comment(lib, "comctl32")
 
+#include"resource.h"
 #include"headers/public.h"
 #include"headers/read.h"
 #include"headers/cal_mod.h" 
@@ -14,10 +17,10 @@ name='Microsoft.Windows.Common-Controls' version='6.0.0.0' \
 processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
 
 //FILE SELECT DIALOGS
-#define FILEEXOP  TEXT("Obs Files(*.o*)\0*.20o;*.21o;*.22o;*.23o;*.24o\0"\
+#define FILEEXOP  TEXT("RINEX OBS(*.o*.*.*obs.*.*d)\0*.*o;*.*obs;*.*d\0"\
 					 "All Files(*.*)\0*.*\0\0");
 
-#define FILEEXNP  TEXT("Nav Files(*.p*)\0*.20p;*.21p;*.22p;*.23p;*.24p\0"\
+#define FILEEXNP  TEXT("RINEX NAV(*.*nav.*.hnav.*.gnav.*.qnav.*.*n.*.*g.*.*h.*.*q.*.*p)\0*.*nav;*.hnav;*.gnav;*.qnav;*.*n;*.*g;*.*h;*.*q;*.*p\0"\
 					 "All Files(*.*)\0*.*\0\0")
 
 #define FILEEXSV  TEXT("Spos Files(*.sp*)\0*.sp\0"\
@@ -30,7 +33,10 @@ processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
 #define OPTBUTTON	3304
 #define PLOBUTTON	3305
 #define OBSCLEAR	3306
-#define NAVCLEAR	3307
+#define OBSRELOD	3307
+#define NAVCLEAR	3308
+#define NAVRELOD	3309
+#define PROGRESS	3310
 //DEF MAIN WINDOW GNSS NUTTONS
 #define GPSCHECK	5500
 #define GLOCHECK	5501
@@ -43,7 +49,7 @@ processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
 #define OPTDFTRO	7002
 #define OPTCONFI	7003
 
-HWND hwndb[13];//BUTTON HANDLE
+HWND hwndb[15];//BUTTON HANDLE
 HWND hwndopt;//OPTIONS HANDLE
 HWND hwndopt_def_ion;//DEFAULT ION COR
 HWND hwndopt_def_tro;//DEFAULT TRO COR
@@ -69,23 +75,8 @@ int bds_satnum = 0;
 static int ionoption = 0;
 static int trooption = 0;
 /* ------------- */
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+char obs_f[MAX_PATH] = { 0 };
+char nav_f[MAX_PATH] = { 0 };
 
 static int FileSelobsDialog(const wchar_t* path)//FILEDIALOG FOR OBS
 {
@@ -127,6 +118,7 @@ static int FileSaveDialog(const wchar_t* path)//FILEDIALOG FOR SAVE
 	return GetSaveFileName(&ofn);
 }
 
+DWORD WINAPI PBThreadProc(LPVOID lpParameter);//PROGRESS BAR WINDOW
 LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);//MAIN WINDOW
 LRESULT CALLBACK OptWndProc(HWND, UINT, WPARAM, LPARAM);//OPTION WINDOW
 
@@ -138,7 +130,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 	wndclass.cbClsExtra = 0;
 	wndclass.cbWndExtra = 0;
 	wndclass.hInstance = hInstance;
-	wndclass.hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_ICON1));
+	wndclass.hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_ICON2));
 	wndclass.hCursor = LoadCursor(NULL, IDC_ARROW);
 	wndclass.hbrBackground = (HBRUSH)(COLOR_BTNFACE + 1);
 	wndclass.lpszMenuName = NULL;
@@ -147,7 +139,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 	RegisterClass(&wndclass);
 
 	wndclass.lpfnWndProc = OptWndProc;
-	wndclass.hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_ICON2));
+	wndclass.hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_ICON3));
 	wndclass.hbrBackground = (HBRUSH)(COLOR_BTNFACE + 1);
 	wndclass.lpszMenuName = NULL;
 	wndclass.lpszClassName = TEXT("OPT");
@@ -159,8 +151,8 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 		TEXT("SPP"),
 		TEXT("SPP Calculate"),
 		WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX,
-		650, 
-		300, 
+		0, 
+		0, 
 		0, 
 		0,
 		NULL, 
@@ -168,6 +160,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 		hInstance, 
 		NULL);
 
+	HICON Delico,Relico;
 	HFONT hbFont;
 	hbFont = CreateFont(
 		15,
@@ -191,6 +184,12 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 	{
 		SendMessage(hwndb[i], WM_SETFONT, (WPARAM)hbFont, 1);
 	}
+	Delico = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_ICON1));
+	Relico = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_ICON4));
+	SendMessage(hwndb[11], BM_SETIMAGE, IMAGE_ICON, (LPARAM)Delico);
+	SendMessage(hwndb[12], BM_SETIMAGE, IMAGE_ICON, (LPARAM)Relico);
+	SendMessage(hwndb[13], BM_SETIMAGE, IMAGE_ICON, (LPARAM)Delico);
+	SendMessage(hwndb[14], BM_SETIMAGE, IMAGE_ICON, (LPARAM)Relico);
 
 	ShowWindow(hwnd, iCmdShow);
 	UpdateWindow(hwnd);
@@ -212,9 +211,12 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam){
 	char nav_file[MAX_PATH] = { 0 };
 	char res_file[MAX_PATH] = { 0 };//BE COMPATIBLE WITH MSVC
 
+	char path[MAX_PATH];
+	getcwd(path, sizeof(path));//GET THE PROGRAM'S FOLDER
+
 	RECT rect;
-	HBITMAP Delico;
 	TCHAR* SATSYS[5] = { TEXT("GPS"),TEXT("GLO"),TEXT("BeiDou"),TEXT("Galileo"),TEXT("SBAS") };
+	static HWND hwndPB;
 	static int cxchar, cychar;
 
 	switch (msg) {
@@ -223,26 +225,35 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam){
 		cxchar = LOWORD(GetDialogBaseUnits());
 		cychar = HIWORD(GetDialogBaseUnits());//GET THE SYS FONT SIZE
 
-		GetWindowRect(hwnd, &rect);
-		MoveWindow(hwnd, rect.left, rect.bottom, 50 * cxchar, 15 * cychar, TRUE);//REPAINT THE MAIN WINDOW
+		MoveWindow(hwnd, (GetSystemMetrics(SM_CXSCREEN) - 50 * cxchar) / 2, (GetSystemMetrics(SM_CYSCREEN) - 16 * cychar) / 2, 50 * cxchar, 16 * cychar, TRUE);//REPAINT THE MAIN WINDOW
 
+		InitCommonControls();
+		hwndPB = CreateWindowEx(0, PROGRESS_CLASS, NULL, WS_CHILD | WS_VISIBLE, 
+		          0,12 * cychar,
+		50 * cxchar, 1 * cychar,
+		hwnd, (HMENU)PROGRESS,((LPCREATESTRUCT)lParam)->hInstance, NULL);
+		
 		//CREATE THE BUTTONS
 		hwndb[0] = CreateWindow(TEXT("Button"), TEXT("Open Obs Data"), WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON,
 		     cxchar,  5 * cychar,
 		14 * cxchar,  2 * cychar,
 		hwnd, (HMENU)OBSBUTTON, ((LPCREATESTRUCT)lParam)->hInstance, NULL);
+
 		hwndb[1] = CreateWindow(TEXT("Button"), TEXT("Open Nav Data"), WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON,
 		17 * cxchar,  5 * cychar,
 		14 * cxchar,  2 * cychar,
 		hwnd, (HMENU)NAVBUTTON, ((LPCREATESTRUCT)lParam)->hInstance, NULL);
+
 		hwndb[2] = CreateWindow(TEXT("Button"), TEXT("Sat-Position Calculate"), WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON,  
 			 cxchar,  7 * cychar,
 		32 * cxchar,  2 * cychar,
 		hwnd, (HMENU)CALBUTTON, ((LPCREATESTRUCT)lParam)->hInstance, NULL);
+
 		hwndb[3] = CreateWindow(TEXT("Button"), TEXT("Options..."), WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON,
 		36 * cxchar,  7 * cychar,
 		10 * cxchar,  2 * cychar,
 		hwnd, (HMENU)OPTBUTTON, ((LPCREATESTRUCT)lParam)->hInstance, NULL);
+
 		hwndb[4] = CreateWindow(TEXT("Button"), TEXT("Plot"), WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON,
 		36 * cxchar,  5 * cychar,
 		10 * cxchar,  2 * cychar,
@@ -259,69 +270,146 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam){
 		hwndb[10] = CreateWindow(TEXT("Button"), TEXT("Satellite System"), WS_VISIBLE | WS_CHILD | BS_GROUPBOX,
 		   1 * cxchar/2, 19 * cychar/2,
 		    47 * cxchar,  6 * cychar/2,
-			hwnd, (HMENU)SYSGROUP, ((LPCREATESTRUCT)lParam)->hInstance, NULL);	
-		hwndb[11] = CreateWindow(TEXT("Button"), NULL, WS_VISIBLE | WS_CHILD | BS_BITMAP | BS_PUSHBUTTON,
+			hwnd, (HMENU)SYSGROUP, ((LPCREATESTRUCT)lParam)->hInstance, NULL);
+
+
+		hwndb[11] = CreateWindow(TEXT("Button"), NULL, WS_VISIBLE | WS_CHILD | BS_ICON | BS_PUSHBUTTON,
 			15 * cxchar, 5 * cychar,
-			 2 * cxchar, 2 * cychar,
+			 2 * cxchar, 1 * cychar,
 			hwnd, (HMENU)OBSCLEAR, ((LPCREATESTRUCT)lParam)->hInstance, NULL);
-		hwndb[12] = CreateWindow(TEXT("Button"), NULL, WS_VISIBLE | WS_CHILD | BS_BITMAP | BS_PUSHBUTTON,
+
+		hwndb[12] = CreateWindow(TEXT("Button"), NULL, WS_VISIBLE | WS_CHILD | BS_ICON | BS_PUSHBUTTON,
+			15 * cxchar, 6 * cychar,
+			 2 * cxchar, 1 * cychar,
+			hwnd, (HMENU)OBSRELOD, ((LPCREATESTRUCT)lParam)->hInstance, NULL);
+
+		hwndb[13] = CreateWindow(TEXT("Button"), NULL, WS_VISIBLE | WS_CHILD | BS_ICON | BS_PUSHBUTTON,
 			31 * cxchar, 5 * cychar,
-			 2 * cxchar, 2 * cychar,
+			2 * cxchar, 1 * cychar,
 			hwnd, (HMENU)NAVCLEAR, ((LPCREATESTRUCT)lParam)->hInstance, NULL);
 
+		hwndb[14] = CreateWindow(TEXT("Button"), NULL, WS_VISIBLE | WS_CHILD | BS_ICON | BS_PUSHBUTTON,
+			31 * cxchar, 6 * cychar,
+			2 * cxchar, 1 * cychar,
+			hwnd, (HMENU)NAVRELOD, ((LPCREATESTRUCT)lParam)->hInstance, NULL);
 
+		
 		return 0;
 	case WM_COMMAND:
 		switch(LOWORD(wParam))
 		{
 /* -------------------------- LOAD OBS DATA BUTTON -------------------------- */
 			case OBSBUTTON:
-				FileSelobsDialog(wobs_file);
-				wcstombs(obs_file, wobs_file, MAX_PATH);
-				fp_obs = fopen(obs_file, TEXT("r"));
-				if (fp_obs != NULL)
+				if (fp_obs == NULL)
 				{
-					o_epochnum = get_epochnum(fp_obs);
-					rewind(fp_obs);
-					obs_h = (pobs_head)malloc(sizeof(obs_head));
-					obs_e = (pobs_epoch)malloc(sizeof(obs_epoch) * o_epochnum);
-					obs_b = (pobs_body)malloc(sizeof(obs_body) * o_epochnum);
-					if (obs_h && obs_e && obs_b)
+					FileSelobsDialog(wobs_file);
+					wcstombs(obs_file, wobs_file, MAX_PATH);
+					fp_obs = fopen(obs_file, TEXT("r"));
+					if (fp_obs != NULL)
 					{
-						read_o_h(fp_obs, obs_h);
-						read_o_b(fp_obs, obs_e, obs_b, obs_h->obstypenum_gps, obs_h->obstypenum_bds);
+						strcpy(obs_f, obs_file);
+						o_epochnum = get_epochnum(fp_obs);
+						rewind(fp_obs);
+						obs_h = (pobs_head)malloc(sizeof(obs_head));
+						obs_e = (pobs_epoch)malloc(sizeof(obs_epoch) * o_epochnum);
+						obs_b = (pobs_body)malloc(sizeof(obs_body) * o_epochnum);
+						if (obs_h && obs_e && obs_b)
+						{
+							read_o_h(fp_obs, obs_h);
+							read_o_b(fp_obs, obs_e, obs_b, obs_h->obstypenum_gps, obs_h->obstypenum_bds);
+						}
+						fclose(fp_obs);
+						if (o_epochnum > 0)
+						{
+							MessageBox(hwnd, TEXT("File of Obs load complete!"), TEXT("NOTICE"), MB_ICONASTERISK | MB_OK);
+						}
 					}
-					fclose(fp_obs);
-					if (o_epochnum > 0)
-					{
-						MessageBox(hwnd, TEXT("File of Obs load complete!"), TEXT("NOTICE"), MB_ICONASTERISK | MB_OK);
-						break;
-					}
+				}
+				else
+				{
+					MessageBox(hwnd, TEXT("File of Obs has already been loaded ! \nTo load new data file of Obs, \nPlease clear the existing data first"), TEXT("NOTICE"), MB_ICONASTERISK | MB_OK);
 				}
 				break;
 				return 0;
 /* -------------------------- LOAD NAV DATA BUTTON -------------------------- */
 			case NAVBUTTON:
-				FileSelnavDialog(wnav_file);
-				wcstombs(nav_file, wnav_file, MAX_PATH);
-				fp_nav = fopen(nav_file, TEXT("r"));
+				if (fp_nav == NULL)
+				{
+					FileSelnavDialog(wnav_file);
+					wcstombs(nav_file, wnav_file, MAX_PATH);
+					fp_nav = fopen(nav_file, TEXT("r"));
+					if (fp_nav != NULL)
+					{
+						strcpy(nav_f, nav_file);
+						gps_satnum = getgpssatnum(fp_nav);
+						rewind(fp_nav);
+						bds_satnum = getbdssatnum(fp_nav);
+						rewind(fp_nav);
+						nav_h = (pnav_head)malloc(sizeof(nav_head));
+						nav_b = (pnav_body)malloc(sizeof(nav_body) * (gps_satnum + bds_satnum));
+						if (nav_h && nav_b)
+						{
+							read_n_h(fp_nav, nav_h);
+							read_n_b(fp_nav, nav_b);
+						}
+						fclose(fp_nav);
+						if (gps_satnum > 0)
+						{
+							MessageBox(hwnd, TEXT("File of Nav load complete !"), TEXT("NOTICE"), MB_ICONASTERISK | MB_OK);
+						}
+					}
+				}
+				else
+				{
+					MessageBox(hwnd, TEXT("File of Nav has already been loaded ! \nTo load new data file of Nav, \nPlease clear the existing data first"), TEXT("NOTICE"), MB_ICONASTERISK | MB_OK);
+				}
+				break;
+				return 0;
+/* -------------------------- CLEAR OBS DATA BUTTON ------------------------- */
+			case OBSCLEAR:
+				while (fp_obs != NULL)
+				{
+					free(obs_h); free(obs_e); free(obs_b);
+					fp_obs = NULL; obs_e = NULL; obs_b = NULL;
+					while (MessageBox(hwnd, TEXT("File of Obs has been cleared."), TEXT("NOTICE"), MB_ICONASTERISK | MB_OK) == IDOK)
+					{
+						break;
+					}
+				}	
+				break;
+				return 0;
+
+			case OBSRELOD:
+				if (fp_obs != NULL)
+				{
+					if (o_epochnum > 0)
+					{
+						MessageBox(hwnd, TEXT("File of Obs Reload complete !"), TEXT("NOTICE"), MB_ICONASTERISK | MB_OK);
+						break;
+					}
+				}
+				break;
+				return 0;
+/* -------------------------- CLEAR NAV DATA BUTTON ------------------------- */
+			case NAVCLEAR:
+				while(fp_nav != NULL)
+				{
+					free(nav_h); free(nav_b);
+					fp_nav = NULL;nav_h = NULL; nav_b = NULL;
+					while (MessageBox(hwnd, TEXT("File of Nav has been cleared."), TEXT("NOTICE"), MB_ICONASTERISK | MB_OK) == IDOK)
+					{
+						break;
+					}
+				}
+				break;
+				return 0;
+
+			case NAVRELOD:
 				if (fp_nav != NULL)
 				{
-					gps_satnum = getgpssatnum(fp_nav);
-					rewind(fp_nav);
-					bds_satnum = getbdssatnum(fp_nav);
-					rewind(fp_nav);
-					nav_h = (pnav_head)malloc(sizeof(nav_head));
-					nav_b = (pnav_body)malloc(sizeof(nav_body) * (gps_satnum + bds_satnum));
-					if (nav_h && nav_b)
-					{
-						read_n_h(fp_nav, nav_h);
-						read_n_b(fp_nav, nav_b);
-					}
-					fclose(fp_nav);
 					if (gps_satnum > 0)
 					{
-						MessageBox(hwnd, TEXT("File of Nav load complete!"), TEXT("NOTICE"), MB_ICONASTERISK | MB_OK);
+						MessageBox(hwnd, TEXT("File of Nav Reload complete !"), TEXT("NOTICE"), MB_ICONASTERISK | MB_OK);
 						break;
 					}
 				}
@@ -331,15 +419,15 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam){
 			case CALBUTTON:
 				if (fp_obs == NULL && fp_nav == NULL)
 				{
-					MessageBox(hwnd, TEXT("No Data File!"), TEXT("STOP"), MB_ICONERROR | MB_OKCANCEL | MB_DEFBUTTON1);
+					MessageBox(hwnd, TEXT("No Data File !"), TEXT("STOP"), MB_ICONERROR | MB_OKCANCEL | MB_DEFBUTTON1);
 				}
 				else if (fp_obs == NULL && fp_nav != NULL)
 				{
-					MessageBox(hwnd, TEXT("No Obs Data File!"), TEXT("STOP"), MB_ICONERROR | MB_OKCANCEL | MB_DEFBUTTON1);
+					MessageBox(hwnd, TEXT("No Obs Data File !"), TEXT("STOP"), MB_ICONERROR | MB_OKCANCEL | MB_DEFBUTTON1);
 				}
 				else if (fp_obs != NULL && fp_nav == NULL)
 				{
-					MessageBox(hwnd, TEXT("No Nav Data File!"), TEXT("STOP"), MB_ICONERROR | MB_OKCANCEL | MB_DEFBUTTON1);
+					MessageBox(hwnd, TEXT("No Nav Data File !"), TEXT("STOP"), MB_ICONERROR | MB_OKCANCEL | MB_DEFBUTTON1);
 				}
 				else if (fp_obs != NULL && fp_nav != NULL)
 				{
@@ -347,13 +435,11 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam){
 					for (int i = 0; i < 5; i++){ALLSTATE += SendMessage(hwndb[i + 5], BM_GETCHECK, wParam, lParam);}
 					if (ALLSTATE == 0x0000)
 					{
-						while (1)
+						while (MessageBox(hwnd, TEXT("No GNSS is choosen\nPlease Retry"), TEXT("STOP"), MB_ICONERROR | MB_RETRYCANCEL) == IDRETRY)
 						{
-							if (MessageBox(hwnd, TEXT("No GNSS is choosen\nPlease Retry"), TEXT("NOTICE"), MB_ICONERROR | MB_RETRYCANCEL) == IDRETRY)
-							{
 								break;
-							}
 						}
+						
 					}
 					else
 					{
@@ -361,7 +447,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam){
 						wcstombs(res_file, wres_file, MAX_PATH);
 						if (res_file[0] == '\0')
 						{
-							while (MessageBox(hwnd, TEXT("Failed to select a save path.\nThe data has been cleared!"), TEXT("WARNING"), MB_ICONWARNING | MB_OK) == IDOK)
+							while (MessageBox(hwnd, TEXT("Failed to select a save path.\nThe data has been cleared !"), TEXT("WARNING"), MB_ICONWARNING | MB_OK) == IDOK)
 							{
 								break;
 							}
@@ -370,7 +456,8 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam){
 						{
 							if (SendMessage(hwndb[5], BM_GETCHECK, wParam, lParam) == BST_CHECKED)
 							{
-								sat_gps_pos_clac(result_file, nav_b, obs_e, obs_b, obs_h, o_epochnum, gps_satnum, res_file);
+								CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)PBThreadProc, hwndPB, 0, 0);
+								sat_gps_pos_clac(result_file, nav_b, obs_e, obs_b, obs_h, o_epochnum, gps_satnum, res_file, obs_f, nav_f, ionoption, trooption);
 							}
 						}
 						free(obs_h); free(obs_e); free(obs_b); free(nav_h); free(nav_b);
@@ -384,7 +471,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam){
 			case OPTBUTTON:
 				DestroyWindow(hwndopt);
 				hwndopt = CreateWindow(TEXT("OPT"), TEXT("Options"), WS_CAPTION | WS_SYSMENU,
-					650, 300,
+					0, 0,
 					0, 0,
 				NULL, NULL, GetWindowLongPtr(hwndopt, GWLP_HINSTANCE), NULL);
 				HFONT hbFont;
@@ -404,20 +491,29 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam){
 				break;
 				return 0;
 /* ------------------------------- PLOT BUTTON ------------------------------ */
-			case PLOBUTTON:
+			case PLOBUTTON: {
+				
+				const char plot[] = "SPP_plot.exe";
+				const wchar_t wpath[MAX_PATH];
+				sprintf(path, "%s\\%s", path, plot);
+				mbstowcs(wpath, path, MAX_PATH);
+
+				if (ShellExecute(NULL, TEXT("open"), wpath, NULL, NULL, SW_SHOW) <= 32)
+				{
+					MessageBox(hwnd, TEXT("Failed to open Plot module !\nThe file may be removed or be damaged.\n "), TEXT("ERROR"), MB_ICONERROR | MB_OK);
+				}
 
 				break;
 				return 0;
+			}
 /* ------------------------------- DEFAULT MSG ------------------------------ */
 			default:
 				return DefWindowProc(hwnd, msg, wParam, lParam);
 		} 
 		return 0;
 	case WM_CLOSE:
-		if(MessageBox(hwnd, TEXT("You're shutting the program"), TEXT("NOTICE"), MB_OKCANCEL | MB_ICONASTERISK) == IDOK )
-			DestroyWindow(hwnd);
-		else
-			return 0;
+		DestroyWindow(hwnd);
+		return 0;
 	case WM_DESTROY:
 		PostQuitMessage(0);
 		return 0;
@@ -434,8 +530,8 @@ LRESULT CALLBACK OptWndProc(HWND hwndopt, UINT msg, WPARAM wParam, LPARAM lParam
 	case WM_CREATE:
 		cxchar = LOWORD(GetDialogBaseUnits());
 		cychar = HIWORD(GetDialogBaseUnits());
-		GetWindowRect(hwndopt, &rect);
-		MoveWindow(hwndopt, rect.left, rect.bottom, 30 * cxchar, 7 * cychar, TRUE);
+
+		MoveWindow(hwndopt, (GetSystemMetrics(SM_CXSCREEN) - 30 * cxchar) / 2, (GetSystemMetrics(SM_CYSCREEN) - 7 * cychar) / 2, 30 * cxchar, 7 * cychar, TRUE);
 		ShowWindow(hwndopt, SW_SHOWDEFAULT);
 		UpdateWindow(hwndopt);
 		hwndopt_def_ion = CreateWindow(TEXT("BUTTON"), TEXT("Use Default ION_COR"), WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX,
@@ -482,4 +578,24 @@ LRESULT CALLBACK OptWndProc(HWND hwndopt, UINT msg, WPARAM wParam, LPARAM lParam
 		return DefWindowProc(hwndopt, msg, wParam, lParam);
 	}
 	return 0;
+}
+
+DWORD WINAPI PBThreadProc(LPVOID lpParameter) {
+
+	HWND hwndPB = (HWND)lpParameter;
+	PBRANGE range;
+	SendMessage(hwndPB, PBM_SETRANGE, (WPARAM)FALSE, (LPARAM)(MAKELPARAM(0, 100)));
+	SendMessage(hwndPB, PBM_GETRANGE, (WPARAM)TRUE, (LPARAM)&range);
+
+	while (TRUE)
+	{
+		SendMessage(hwndPB, PBM_DELTAPOS, (WPARAM)((range.iHigh - range.iLow) / 20), (LPARAM)0);
+		if (SendMessage(hwndPB, PBM_GETPOS, (WPARAM)0, (LPARAM)0) == range.iHigh)
+		{
+			break;
+		}
+		Sleep(100);
+	}
+	Sleep(2000);
+	SendMessage(hwndPB, PBM_SETPOS, (WPARAM)range.iLow, (LPARAM)0);
 }
