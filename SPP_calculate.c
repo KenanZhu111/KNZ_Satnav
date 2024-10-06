@@ -88,7 +88,7 @@ static void ProgressBar(HWND hwnd, int msec)
 	SendMessage(hwnd, PBM_GETRANGE, (WPARAM)TRUE, (LPARAM)&range);
 	SendMessage(hwnd, PBM_SETPOS, (WPARAM)range.iLow, (LPARAM)0);
 	while (TRUE) {
-		SendMessage(hwnd, PBM_DELTAPOS, (WPARAM)((range.iHigh - range.iLow) / 20), (LPARAM)0); Sleep(msec);
+		SendMessage(hwnd, PBM_DELTAPOS, (WPARAM)((range.iHigh - range.iLow) / 100), (LPARAM)0); Sleep(msec);
 		if (SendMessage(hwnd, PBM_GETPOS, (WPARAM)0, (LPARAM)0) == range.iHigh)
 		{
 			break;
@@ -342,7 +342,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam){
 						}
 						fclose(fp_obs);
 
-						ProgressBar(hwndPB, 50);
+						ProgressBar(hwndPB, 5);
 
 						if (o_epochnum > 0)
 						{
@@ -379,7 +379,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam){
 						}
 						fclose(fp_nav);
 
-						ProgressBar(hwndPB, 20);
+						ProgressBar(hwndPB, 1);
 
 						if (gps_satnum > 0)
 						{
