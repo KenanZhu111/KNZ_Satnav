@@ -2,6 +2,7 @@
 #define _CAL_MOD_H_
 #include<stdio.h>
 #include<stdlib.h>
+#include<Windows.h>
 #include<math.h>
 #include<time.h>
 
@@ -66,13 +67,16 @@ pos_ts gps_pos(int sPRN, int best_epoch, double GPSsec,
 
 
 /* ------------------------------- GPS卫星位置计算&输出 ------------------------------ */
-void sat_gps_pos_clac(FILE * result_file, 
-                     pnav_body nav_b, pobs_epoch obs_e, pobs_body obs_b,
-                     pobs_head obs_h,  
-                     int o_epochnum, int gps_satnum,
-                     char res_file[MAX_PATH], char obs_file[MAX_PATH], char nav_file[MAX_PATH],
-                     int ionosopt, int tropoopt)
-    { 
+void sat_gps_pos_clac(FILE* result_file,HWND hwndPB,
+    pnav_body nav_b, pobs_epoch obs_e, pobs_body obs_b,pobs_head obs_h,
+    int o_epochnum, int gps_satnum,
+    char res_file[MAX_PATH], char obs_file[MAX_PATH], char nav_file[MAX_PATH],
+    int ionoption, int trooption)
+{
+        PBRANGE range;
+        SendMessage(hwndPB, PBM_SETRANGE, (WPARAM)FALSE, (LPARAM)(MAKELPARAM(0, 100)));
+        SendMessage(hwndPB, PBM_GETRANGE, (WPARAM)TRUE, (LPARAM)&range);
+
         time_t gen_time;
         time(&gen_time);
         stations station = { 0 };
@@ -85,30 +89,30 @@ void sat_gps_pos_clac(FILE * result_file,
         fclose(result_file);
         result_file = fopen(res_file, "a+");
         fprintf(result_file, "@ GENERATE PROGRAM   : SPP Calculate v0.4.7\n");
-        fprintf(result_file, "@ GENERATE TYPE      : Satellite  Position\n" );
+        fprintf(result_file, "@ GENERATE TYPE      : Satellite  Position\n");
         fprintf(result_file, "@ GENERATE TIME      : %s", ctime(&gen_time));
         fprintf(result_file, "@ OBS FILE PATH      : %s\n", obs_file);
         fprintf(result_file, "@ NAV FILE PATH      : %s\n", nav_file);
         fprintf(result_file, "@ APPROX POSITION XYZ: %13.04f%13.04f%13.04f\n@ APPROX POSITION BLH:  %12.07f %12.07f %12.07f\n"
-                                                    ,obs_h->apX ,obs_h->apY ,obs_h->apZ
-                                                    ,station.B ,station.L,station.H);
-        if (ionosopt == 0) { fprintf(result_file, "@ IONOS OPT          : NULL\n"); }
-        if (ionosopt == 1) { fprintf(result_file, "@ IONOS OPT          : DEFAULT\n"); }
-        if (tropoopt == 0) { fprintf(result_file, "@ TROPO OPT          : NULL\n@\n\n"); }
-        if (tropoopt == 1) { fprintf(result_file, "@ TROPO OPT          : DEFAULT\n@\n\n"); }
-        
+            , obs_h->apX, obs_h->apY, obs_h->apZ
+            , station.B, station.L, station.H);
+        if (ionoption == 0) { fprintf(result_file, "@ IONOS OPT          : NULL\n"); }
+        if (ionoption == 1) { fprintf(result_file, "@ IONOS OPT          : DEFAULT\n"); }
+        if (trooption == 0) { fprintf(result_file, "@ TROPO OPT          : NULL\n@\n\n"); }
+        if (trooption == 1) { fprintf(result_file, "@ TROPO OPT          : DEFAULT\n@\n\n"); }
         fclose(result_file);
-        for (int i = 0; i < o_epochnum; i++)//第i个历元
+
+        for (int i = 0; i < o_epochnum; i++)
         {
             result_file = fopen(res_file, "a+");
-            fprintf(result_file, "\n>%04d %04d %02d %02d %02d %02d %07.04f",i + 1 ,obs_e[i].y ,obs_e[i].m ,obs_e[i].d ,obs_e[i].h ,obs_e[i].min ,obs_e[i].sec);
+            fprintf(result_file, "\n>%04d %04d %02d %02d %02d %02d %07.04f", i + 1, obs_e[i].y, obs_e[i].m, obs_e[i].d, obs_e[i].h, obs_e[i].min, obs_e[i].sec);
             fclose(result_file);
 
             int y = obs_e[i].y;
-            int m = obs_e[i].m; 
-            int d = obs_e[i].d; 
-            double h  = obs_e[i].h; 
-            int min = obs_e[i].min; 
+            int m = obs_e[i].m;
+            int d = obs_e[i].d;
+            double h = obs_e[i].h;
+            int min = obs_e[i].min;
             double sec = obs_e[i].sec;
 
             xyz2blh tem1 = { 0 };
@@ -130,23 +134,23 @@ void sat_gps_pos_clac(FILE * result_file,
                 //计算近似的信号传播时间,接收机钟差已初始化为0(伪距/光速-接收机钟差+卫星钟差)
                 pos_t.delta_t[sPRN] = (obs_b[i].obs_gps[j][Code2Type(C1C, obs_h->obstypenum_gps, obs_h->obscode_gps)] / C_V) - station.delta_TR + nav_b[best_epoch].sa0 + nav_b[best_epoch].sa1 * detat_toc + nav_b[best_epoch].sa2 * pow(detat_toc, 2);
                 pos_t.deltat[sPRN] = 0.0;//判断收敛
-                while (fabs(pos_t.delta_t[sPRN] - pos_t.deltat[sPRN]) > 1.0e-9){
-                    
+                while (fabs(pos_t.delta_t[sPRN] - pos_t.deltat[sPRN]) > 1.0e-9) {
+
                     pos_t = gps_pos(sPRN, best_epoch, GPSsec, nav_b, obs_h, pos_t);
                 }
 
-                /* ----------------------------- 地固坐标系转经纬大地高坐标系 ----------------------------- */ 
-                tem1 = XYZ2BLH( tem1, pos_t.X[sPRN], pos_t.Y[sPRN], pos_t.Z[sPRN]);
+                /* ----------------------------- 地固坐标系转经纬大地高坐标系 ----------------------------- */
+                tem1 = XYZ2BLH(tem1, pos_t.X[sPRN], pos_t.Y[sPRN], pos_t.Z[sPRN]);
                 blh.B = rad2deg(tem1.B);
                 blh.L = rad2deg(tem1.L);
                 blh.H = tem1.H;
                 /* -------------------------------------------------------------------------- */
-                
+
                 /* ----------------------------- 经纬大地高坐标系转站心坐标系 ----------------------------- */
                 double deltax = pos_t.X[sPRN] - obs_h->apX;
                 double deltay = pos_t.Y[sPRN] - obs_h->apY;
                 double deltaz = pos_t.Z[sPRN] - obs_h->apZ;
-                 
+
                 tem3 = BLH2ENU(tem3, station.B, station.L, deltax, deltay, deltaz);
                 enu.E = tem3.E;
                 enu.N = tem3.N;
@@ -159,12 +163,12 @@ void sat_gps_pos_clac(FILE * result_file,
                 rah.A = rad2deg(tem4.A);
                 rah.H = rad2deg(tem4.H);
                 /* -------------------------------------------------------------------------- */
-                if (blh.H < 0 || rah.H < 10 ||nav_b[best_epoch].sHEA != 0)
-                { 
+                if (blh.H < 0 || rah.H < 10 || nav_b[best_epoch].sHEA != 0)
+                {
                     continue;
                 }
                 else
-                {   
+                {
                     temb = DEG2DMS(temb, blh.B);
                     blh.B_d = temb.D;
                     blh.B_m = temb.M;
@@ -177,21 +181,22 @@ void sat_gps_pos_clac(FILE * result_file,
 
                     result_file = fopen(res_file, "a+");
                     fprintf(result_file, "\nG%02d | %15.05f %15.05f %15.05f %15.05f %15.05f %15.05f %15.12f %16.13f"
-                                            ,sPRN, pos_t.X[sPRN], pos_t.Y[sPRN], pos_t.Z[sPRN]
-                                            ,obs_b[i].obs_gps[j][Code2Type(C1C, obs_h->obstypenum_gps, obs_h->obscode_gps)]
-                                            ,obs_b[i].obs_gps[j][Code2Type(C2L, obs_h->obstypenum_gps, obs_h->obscode_gps)]
-                                            ,rah.H, nav_b[best_epoch].TGD, pos_t.delta_clk[sPRN]);
+                        , sPRN, pos_t.X[sPRN], pos_t.Y[sPRN], pos_t.Z[sPRN]
+                        , obs_b[i].obs_gps[j][Code2Type(C1C, obs_h->obstypenum_gps, obs_h->obscode_gps)]
+                        , obs_b[i].obs_gps[j][Code2Type(C2L, obs_h->obstypenum_gps, obs_h->obscode_gps)]
+                        , rah.H, nav_b[best_epoch].TGD, pos_t.delta_clk[sPRN]);
                     fclose(result_file);
                 }
-
             }
             result_file = fopen(res_file, "a+");
             fprintf(result_file, "\n");
             fclose(result_file);
+            SendMessage(hwndPB, PBM_SETPOS, (WPARAM)((int)(i * 100 / o_epochnum)), (LPARAM)0);
+
         }
         result_file = fopen(res_file, "a+");
         fprintf(result_file, "\nEND");
         fclose(result_file);
-    }
-
+        SendMessage(hwndPB, PBM_SETPOS, (WPARAM)range.iHigh, (LPARAM)0);
+}
 #endif

@@ -66,10 +66,10 @@ pobs_head obs_h    = NULL;
 pobs_epoch obs_e   = NULL;
 pobs_body obs_b    = NULL;
 
+/*INITIAL CONST*/
 int o_epochnum = 0;
 int gps_satnum = 0;
 int bds_satnum = 0;
-
 
 /*INITIAL SETTINGS*/
 static int ionoption = 0;
@@ -77,6 +77,25 @@ static int trooption = 0;
 /* ------------- */
 char obs_f[MAX_PATH] = { 0 };
 char nav_f[MAX_PATH] = { 0 };
+
+char  path[MAX_PATH];
+const wchar_t wpath[MAX_PATH];//PROGRAM'S FOLDER
+
+static void ProgressBar(HWND hwnd, int msec)
+{
+	PBRANGE range;
+	SendMessage(hwnd, PBM_SETRANGE, (WPARAM)FALSE, (LPARAM)(MAKELPARAM(0, 100)));
+	SendMessage(hwnd, PBM_GETRANGE, (WPARAM)TRUE, (LPARAM)&range);
+	SendMessage(hwnd, PBM_SETPOS, (WPARAM)range.iLow, (LPARAM)0);
+	while (TRUE) {
+		SendMessage(hwnd, PBM_DELTAPOS, (WPARAM)((range.iHigh - range.iLow) / 20), (LPARAM)0); Sleep(msec);
+		if (SendMessage(hwnd, PBM_GETPOS, (WPARAM)0, (LPARAM)0) == range.iHigh)
+		{
+			break;
+		}
+	}
+	SendMessage(hwnd, PBM_SETPOS, (WPARAM)range.iHigh, (LPARAM)0);
+}
 
 static int FileSelobsDialog(const wchar_t* path)//FILEDIALOG FOR OBS
 {
@@ -118,7 +137,7 @@ static int FileSaveDialog(const wchar_t* path)//FILEDIALOG FOR SAVE
 	return GetSaveFileName(&ofn);
 }
 
-DWORD WINAPI PBThreadProc(LPVOID lpParameter);//PROGRESS BAR WINDOW
+//DWORD WINAPI PBThreadProc(LPVOID lpParameter);//PROGRESS BAR WINDOW
 LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);//MAIN WINDOW
 LRESULT CALLBACK OptWndProc(HWND, UINT, WPARAM, LPARAM);//OPTION WINDOW
 
@@ -211,9 +230,6 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam){
 	char nav_file[MAX_PATH] = { 0 };
 	char res_file[MAX_PATH] = { 0 };//BE COMPATIBLE WITH MSVC
 
-	char path[MAX_PATH];
-	getcwd(path, sizeof(path));//GET THE PROGRAM'S FOLDER
-
 	RECT rect;
 	TCHAR* SATSYS[5] = { TEXT("GPS"),TEXT("GLO"),TEXT("BeiDou"),TEXT("Galileo"),TEXT("SBAS") };
 	static HWND hwndPB;
@@ -222,65 +238,70 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam){
 	switch (msg) {
 	
 	case WM_CREATE:
+	{
+		getcwd(path, sizeof(path));//GET THE PROGRAM'S FOLDER
+		const char plot[] = "SPP_plot.exe";
+		sprintf(path, "%s\\%s", path, plot);
+		
 		cxchar = LOWORD(GetDialogBaseUnits());
 		cychar = HIWORD(GetDialogBaseUnits());//GET THE SYS FONT SIZE
 
 		MoveWindow(hwnd, (GetSystemMetrics(SM_CXSCREEN) - 50 * cxchar) / 2, (GetSystemMetrics(SM_CYSCREEN) - 16 * cychar) / 2, 50 * cxchar, 16 * cychar, TRUE);//REPAINT THE MAIN WINDOW
 
 		InitCommonControls();
-		hwndPB = CreateWindowEx(0, PROGRESS_CLASS, NULL, WS_CHILD | WS_VISIBLE, 
-		          0,12 * cychar,
-		50 * cxchar, 1 * cychar,
-		hwnd, (HMENU)PROGRESS,((LPCREATESTRUCT)lParam)->hInstance, NULL);
-		
+		hwndPB = CreateWindowEx(0, PROGRESS_CLASS, NULL, WS_CHILD | WS_VISIBLE,
+			0.5 * cxchar, 12.25 * cychar,
+			47 * cxchar, 1 * cychar,
+			hwnd, (HMENU)PROGRESS, ((LPCREATESTRUCT)lParam)->hInstance, NULL);
+
 		//CREATE THE BUTTONS
 		hwndb[0] = CreateWindow(TEXT("Button"), TEXT("Open Obs Data"), WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON,
-		     cxchar,  5 * cychar,
-		14 * cxchar,  2 * cychar,
-		hwnd, (HMENU)OBSBUTTON, ((LPCREATESTRUCT)lParam)->hInstance, NULL);
+			cxchar, 5 * cychar,
+			14 * cxchar, 2 * cychar,
+			hwnd, (HMENU)OBSBUTTON, ((LPCREATESTRUCT)lParam)->hInstance, NULL);
 
 		hwndb[1] = CreateWindow(TEXT("Button"), TEXT("Open Nav Data"), WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON,
-		17 * cxchar,  5 * cychar,
-		14 * cxchar,  2 * cychar,
-		hwnd, (HMENU)NAVBUTTON, ((LPCREATESTRUCT)lParam)->hInstance, NULL);
+			17 * cxchar, 5 * cychar,
+			14 * cxchar, 2 * cychar,
+			hwnd, (HMENU)NAVBUTTON, ((LPCREATESTRUCT)lParam)->hInstance, NULL);
 
-		hwndb[2] = CreateWindow(TEXT("Button"), TEXT("Sat-Position Calculate"), WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON,  
-			 cxchar,  7 * cychar,
-		32 * cxchar,  2 * cychar,
-		hwnd, (HMENU)CALBUTTON, ((LPCREATESTRUCT)lParam)->hInstance, NULL);
+		hwndb[2] = CreateWindow(TEXT("Button"), TEXT("Sat-Position Calculate"), WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON,
+			cxchar, 7 * cychar,
+			32 * cxchar, 2 * cychar,
+			hwnd, (HMENU)CALBUTTON, ((LPCREATESTRUCT)lParam)->hInstance, NULL);
 
 		hwndb[3] = CreateWindow(TEXT("Button"), TEXT("Options..."), WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON,
-		36 * cxchar,  7 * cychar,
-		10 * cxchar,  2 * cychar,
-		hwnd, (HMENU)OPTBUTTON, ((LPCREATESTRUCT)lParam)->hInstance, NULL);
+			36 * cxchar, 7 * cychar,
+			10 * cxchar, 2 * cychar,
+			hwnd, (HMENU)OPTBUTTON, ((LPCREATESTRUCT)lParam)->hInstance, NULL);
 
 		hwndb[4] = CreateWindow(TEXT("Button"), TEXT("Plot"), WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON,
-		36 * cxchar,  5 * cychar,
-		10 * cxchar,  2 * cychar,
-		hwnd, (HMENU)PLOBUTTON, ((LPCREATESTRUCT)lParam)->hInstance, NULL);
+			36 * cxchar, 5 * cychar,
+			10 * cxchar, 2 * cychar,
+			hwnd, (HMENU)PLOBUTTON, ((LPCREATESTRUCT)lParam)->hInstance, NULL);
 
 
 		for (int i = 0; i < 5; i++)
 		{
 			hwndb[i + 5] = CreateWindow(TEXT("Button"), SATSYS[i], WS_VISIBLE | WS_CHILD | BS_AUTOCHECKBOX,
-							 (2 + 7 * i) * cxchar,  21 * cychar/2,
-							           7 * cxchar,   5 * cychar/3,
-							  hwnd, (HMENU)(5500 + i), ((LPCREATESTRUCT)lParam)->hInstance, NULL);
+				(2 + 7 * i) * cxchar, 21 * cychar / 2,
+				7 * cxchar, 5 * cychar / 3,
+				hwnd, (HMENU)(5500 + i), ((LPCREATESTRUCT)lParam)->hInstance, NULL);
 		}
 		hwndb[10] = CreateWindow(TEXT("Button"), TEXT("Satellite System"), WS_VISIBLE | WS_CHILD | BS_GROUPBOX,
-		   1 * cxchar/2, 19 * cychar/2,
-		    47 * cxchar,  6 * cychar/2,
+			1 * cxchar / 2, 19 * cychar / 2,
+			47 * cxchar, 6 * cychar / 2,
 			hwnd, (HMENU)SYSGROUP, ((LPCREATESTRUCT)lParam)->hInstance, NULL);
 
 
 		hwndb[11] = CreateWindow(TEXT("Button"), NULL, WS_VISIBLE | WS_CHILD | BS_ICON | BS_PUSHBUTTON,
 			15 * cxchar, 5 * cychar,
-			 2 * cxchar, 1 * cychar,
+			2 * cxchar, 1 * cychar,
 			hwnd, (HMENU)OBSCLEAR, ((LPCREATESTRUCT)lParam)->hInstance, NULL);
 
 		hwndb[12] = CreateWindow(TEXT("Button"), NULL, WS_VISIBLE | WS_CHILD | BS_ICON | BS_PUSHBUTTON,
 			15 * cxchar, 6 * cychar,
-			 2 * cxchar, 1 * cychar,
+			2 * cxchar, 1 * cychar,
 			hwnd, (HMENU)OBSRELOD, ((LPCREATESTRUCT)lParam)->hInstance, NULL);
 
 		hwndb[13] = CreateWindow(TEXT("Button"), NULL, WS_VISIBLE | WS_CHILD | BS_ICON | BS_PUSHBUTTON,
@@ -293,8 +314,9 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam){
 			2 * cxchar, 1 * cychar,
 			hwnd, (HMENU)NAVRELOD, ((LPCREATESTRUCT)lParam)->hInstance, NULL);
 
-		
+
 		return 0;
+	}
 	case WM_COMMAND:
 		switch(LOWORD(wParam))
 		{
@@ -319,6 +341,9 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam){
 							read_o_b(fp_obs, obs_e, obs_b, obs_h->obstypenum_gps, obs_h->obstypenum_bds);
 						}
 						fclose(fp_obs);
+
+						ProgressBar(hwndPB, 50);
+
 						if (o_epochnum > 0)
 						{
 							MessageBox(hwnd, TEXT("File of Obs load complete!"), TEXT("NOTICE"), MB_ICONASTERISK | MB_OK);
@@ -353,6 +378,9 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam){
 							read_n_b(fp_nav, nav_b);
 						}
 						fclose(fp_nav);
+
+						ProgressBar(hwndPB, 20);
+
 						if (gps_satnum > 0)
 						{
 							MessageBox(hwnd, TEXT("File of Nav load complete !"), TEXT("NOTICE"), MB_ICONASTERISK | MB_OK);
@@ -456,9 +484,15 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam){
 						{
 							if (SendMessage(hwndb[5], BM_GETCHECK, wParam, lParam) == BST_CHECKED)
 							{
-								CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)PBThreadProc, hwndPB, 0, 0);
-								sat_gps_pos_clac(result_file, nav_b, obs_e, obs_b, obs_h, o_epochnum, gps_satnum, res_file, obs_f, nav_f, ionoption, trooption);
+
+								sat_gps_pos_clac(result_file, hwndPB, 
+									nav_b, obs_e, obs_b, obs_h, 
+									o_epochnum, gps_satnum, 
+									res_file, obs_f, nav_f, 
+									ionoption, trooption);
+
 							}
+									
 						}
 						free(obs_h); free(obs_e); free(obs_b); free(nav_h); free(nav_b);
 						fp_nav = NULL; fp_obs = NULL; result_file = NULL;
@@ -493,9 +527,6 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam){
 /* ------------------------------- PLOT BUTTON ------------------------------ */
 			case PLOBUTTON: {
 				
-				const char plot[] = "SPP_plot.exe";
-				const wchar_t wpath[MAX_PATH];
-				sprintf(path, "%s\\%s", path, plot);
 				mbstowcs(wpath, path, MAX_PATH);
 
 				if (ShellExecute(NULL, TEXT("open"), wpath, NULL, NULL, SW_SHOW) <= 32)
@@ -578,24 +609,4 @@ LRESULT CALLBACK OptWndProc(HWND hwndopt, UINT msg, WPARAM wParam, LPARAM lParam
 		return DefWindowProc(hwndopt, msg, wParam, lParam);
 	}
 	return 0;
-}
-
-DWORD WINAPI PBThreadProc(LPVOID lpParameter) {
-
-	HWND hwndPB = (HWND)lpParameter;
-	PBRANGE range;
-	SendMessage(hwndPB, PBM_SETRANGE, (WPARAM)FALSE, (LPARAM)(MAKELPARAM(0, 100)));
-	SendMessage(hwndPB, PBM_GETRANGE, (WPARAM)TRUE, (LPARAM)&range);
-
-	while (TRUE)
-	{
-		SendMessage(hwndPB, PBM_DELTAPOS, (WPARAM)((range.iHigh - range.iLow) / 20), (LPARAM)0);
-		if (SendMessage(hwndPB, PBM_GETPOS, (WPARAM)0, (LPARAM)0) == range.iHigh)
-		{
-			break;
-		}
-		Sleep(100);
-	}
-	Sleep(2000);
-	SendMessage(hwndPB, PBM_SETPOS, (WPARAM)range.iLow, (LPARAM)0);
 }
