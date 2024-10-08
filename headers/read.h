@@ -243,9 +243,9 @@ extern void read_o_b(FILE* fp_obs, pobs_epoch obs_e, pobs_body obs_b, int type_g
 /* -------------------------------------------------------------------------- */
 
 /* ---------------------- 获取文件数据块行数，从END OF HEADER后开始起算 --------------------- */
-int getgpssatnum(FILE* fp_nav)
+int getsatnum(FILE* fp_nav)
 {
-	int gps_satnum = 0;
+	int satnum = 0;
 	int flag = 0;
 	char buff[MAXRINEX];//用来存放读取到的字符串
 	char satvar;
@@ -263,54 +263,18 @@ int getgpssatnum(FILE* fp_nav)
 			while (fgets(buff, MAXRINEX, fp_nav))
 			{
 				strncpy(&satvar, buff + 0, 1);
-				if (satvar != 'G')
+				if (satvar == 'G' || satvar == 'E' || satvar == 'R' || satvar == 'S' || satvar == 'C' || satvar == 'I' || satvar == 'J')
+				{
+					satnum++;
+				}
+				else
 				{
 					continue;
-				}
-				else if (satvar == 'G')
-				{
-					gps_satnum++;
-					break;	
-				}	
-			}											
-		}
-	}
-	return gps_satnum;
-}
-
-int getbdssatnum(FILE* fp_nav)
-{
-	int bds_satnum = 0;
-	int flag = 0;
-	char buff[MAXRINEX];//用来存放读取到的字符串
-	char satvar;
-	char* lable = buff + 60;
-	//fgets函数，读取一行，当读取结束后返回NULL指针，格式如下：
-	//wchar_t * fgets ( wchar_t * str, int num, FILE * stream );
-	while (fgets(buff, MAXRINEX, fp_nav))
-	{
-		if (strstr(lable, "END OF HEADER"))
-		{
-			flag = 1;
-		}
-		if (flag == 1)
-		{
-			while (fgets(buff, MAXRINEX, fp_nav))
-			{
-				strncpy(&satvar, buff + 0, 1);
-				if (satvar != 'C')
-				{
-					continue;
-				}
-				else if (satvar == 'C')
-				{
-					bds_satnum++;
-					break;
 				}
 			}
 		}
 	}
-	return bds_satnum;
+	return satnum;
 }
 
 /* -------------------------------- 读取N文件数据头 -------------------------------- */
@@ -390,7 +354,7 @@ void read_n_h(FILE* fp_nav, pnav_head nav_h)
 void read_n_b(FILE* fp_nav, pnav_body nav_b)
 {
 	int i_g = 0;//第i_g个卫星数据
-	char buff[84] = { 0 };
+	char buff[MAXRINEX] = { 0 };
 	char flag = { 0 };//判断符号
 	while (fgets(buff, MAXRINEX, fp_nav))
 	{

@@ -10,24 +10,27 @@
 /// @param SecofWeek 计算得到的观测历元的周内秒
 /// @param sPRN 需要匹配的该历元卫星号
 /// @param nav_b 导航文件数据块结构体，与卫星号匹配
-/// @param gps_satnum 该历元的GPS卫星数量
+/// @param satnum 广播星历卫星数量
+/// @param syscode 卫星系统代码，详情见PPUBLIC.H
 /// @return 返回最佳历元的绝对历元序号
 /* -------------------------------------------------------------------------- */
-extern int select_epoch(double SecofWeek, int sPRN, pnav_body nav_b, int gps_satnum)
+extern int select_epoch(double SecofWeek, int sPRN, pnav_body nav_b, int satnum, int syscode)
 {
 	int best_epoch = 0;
 	double min = 10000;//初始化最小值
 	double Min;
-	int i;
-	for (i = 0; i < gps_satnum; i++)
+	if (syscode == GPS)
 	{
-		if (sPRN == nav_b[i].sPRN_GPS)
+		for (int i = 0; i < satnum; i++)
 		{
-			Min = fabs(SecofWeek - nav_b[i].TOE);
-			if (Min <= min)
+			if (sPRN == nav_b[i].sPRN_GPS)
 			{
-				best_epoch = i;
-				min = Min;
+				Min = fabs(SecofWeek - nav_b[i].TOE);
+				if (Min <= min)
+				{
+					best_epoch = i;
+					min = Min;
+				}
 			}
 		}
 	}

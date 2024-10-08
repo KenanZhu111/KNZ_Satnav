@@ -16,60 +16,25 @@
 name='Microsoft.Windows.Common-Controls' version='6.0.0.0' \
 processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
 
-//FILE SELECT DIALOGS
-#define FILEEXOP  TEXT("RINEX OBS(*.o*.*.*obs.*.*d)\0*.*o;*.*obs;*.*d\0"\
-					 "All Files(*.*)\0*.*\0\0");
-
-#define FILEEXNP  TEXT("RINEX NAV(*.*nav.*.hnav.*.gnav.*.qnav.*.*n.*.*g.*.*h.*.*q.*.*p)\0*.*nav;*.hnav;*.gnav;*.qnav;*.*n;*.*g;*.*h;*.*q;*.*p\0"\
-					 "All Files(*.*)\0*.*\0\0")
-
-#define FILEEXSV  TEXT("Spos Files(*.sp*)\0*.sp\0"\
-					 "All Files(*.*)\0*.*\0\0");
-
-//DEF MAIN WINDOW BUTTONS
-#define OBSBUTTON	3301
-#define NAVBUTTON	3302
-#define CALBUTTON	3303
-#define OPTBUTTON	3304
-#define PLOBUTTON	3305
-#define OBSCLEAR	3306
-#define OBSRELOD	3307
-#define NAVCLEAR	3308
-#define NAVRELOD	3309
-#define PROGRESS	3310
-//DEF MAIN WINDOW GNSS NUTTONS
-#define GPSCHECK	5500
-#define GLOCHECK	5501
-#define BEICHECK	5502
-#define GALCHECK	5503
-#define SBACHECK	5504
-#define SYSGROUP	1001
-//DEF OPTIONS WINDOW CHECK+BOXS
-#define OPTDFION	7001
-#define OPTDFTRO	7002
-#define OPTCONFI	7003
-
 HWND hwndb[15];//BUTTON HANDLE
 HWND hwndopt;//OPTIONS HANDLE
 HWND hwndopt_def_ion;//DEFAULT ION COR
 HWND hwndopt_def_tro;//DEFAULT TRO COR
 HWND hwndopt_confirm;//OPTION CONFIRM
 
+FILE* fp_nav = NULL;
+FILE* fp_obs = NULL;
+FILE* result_file = NULL;
 
-FILE * fp_nav      = NULL;     
-FILE * fp_obs      = NULL;     
-FILE * result_file = NULL;
-
-pnav_head nav_h    = NULL;
-pnav_body nav_b    = NULL;
-pobs_head obs_h    = NULL;
-pobs_epoch obs_e   = NULL;
-pobs_body obs_b    = NULL;
+pnav_head nav_h = NULL;
+pnav_body nav_b = NULL;
+pobs_head obs_h = NULL;
+pobs_epoch obs_e = NULL;
+pobs_body obs_b = NULL;
 
 /*INITIAL CONST*/
 int o_epochnum = 0;
-int gps_satnum = 0;
-int bds_satnum = 0;
+int satnum = 0;
 
 /*INITIAL SETTINGS*/
 static int ionoption = 0;
@@ -81,20 +46,20 @@ char nav_f[MAX_PATH] = { 0 };
 char  path[MAX_PATH];
 const wchar_t wpath[MAX_PATH];//PROGRAM'S FOLDER
 
-static void ProgressBar(HWND hwnd, int msec)
+static void ProgressBar(HWND hwnd, int BEG, int DES)
 {
 	PBRANGE range;
 	SendMessage(hwnd, PBM_SETRANGE, (WPARAM)FALSE, (LPARAM)(MAKELPARAM(0, 100)));
 	SendMessage(hwnd, PBM_GETRANGE, (WPARAM)TRUE, (LPARAM)&range);
-	SendMessage(hwnd, PBM_SETPOS, (WPARAM)range.iLow, (LPARAM)0);
-	while (TRUE) {
-		SendMessage(hwnd, PBM_DELTAPOS, (WPARAM)((range.iHigh - range.iLow) / 100), (LPARAM)0); Sleep(msec);
-		if (SendMessage(hwnd, PBM_GETPOS, (WPARAM)0, (LPARAM)0) == range.iHigh)
+	SendMessage(hwnd, PBM_SETPOS, (WPARAM)BEG, (LPARAM)0);
+	for (int i = BEG; i < DES; i++) {
+		SendMessage(hwnd, PBM_SETPOS, (WPARAM)(int)( i / 10), (LPARAM)0);
+		if (SendMessage(hwnd, PBM_GETPOS, (WPARAM)0, (LPARAM)0) == range.iHigh * DES/PBSTATEFULL)
 		{
 			break;
 		}
 	}
-	SendMessage(hwnd, PBM_SETPOS, (WPARAM)range.iHigh, (LPARAM)0);
+	SendMessage(hwnd, PBM_SETPOS, (WPARAM)DES, (LPARAM)0);
 }
 
 static int FileSelobsDialog(const wchar_t* path)//FILEDIALOG FOR OBS
@@ -149,16 +114,16 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 	wndclass.cbClsExtra = 0;
 	wndclass.cbWndExtra = 0;
 	wndclass.hInstance = hInstance;
-	wndclass.hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_ICON2));
+	wndclass.hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_ICON1));
 	wndclass.hCursor = LoadCursor(NULL, IDC_ARROW);
 	wndclass.hbrBackground = (HBRUSH)(COLOR_BTNFACE + 1);
 	wndclass.lpszMenuName = NULL;
-	wndclass.lpszClassName = TEXT("SPP");
+	wndclass.lpszClassName = TEXT("CAL");
 
 	RegisterClass(&wndclass);
 
 	wndclass.lpfnWndProc = OptWndProc;
-	wndclass.hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_ICON3));
+	wndclass.hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_ICON2));
 	wndclass.hbrBackground = (HBRUSH)(COLOR_BTNFACE + 1);
 	wndclass.lpszMenuName = NULL;
 	wndclass.lpszClassName = TEXT("OPT");
@@ -167,8 +132,8 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 
 	HWND hwnd;
 	hwnd = CreateWindow(
-		TEXT("SPP"),
-		TEXT("SPP Calculate"),
+		TEXT("CAL"),
+		TEXT("KNZ_Calculate"),
 		WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX,
 		0, 
 		0, 
@@ -203,7 +168,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 	{
 		SendMessage(hwndb[i], WM_SETFONT, (WPARAM)hbFont, 1);
 	}
-	Delico = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_ICON1));
+	Delico = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_ICON3));
 	Relico = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_ICON4));
 	SendMessage(hwndb[11], BM_SETIMAGE, IMAGE_ICON, (LPARAM)Delico);
 	SendMessage(hwndb[12], BM_SETIMAGE, IMAGE_ICON, (LPARAM)Relico);
@@ -240,7 +205,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam){
 	case WM_CREATE:
 	{
 		getcwd(path, sizeof(path));//GET THE PROGRAM'S FOLDER
-		const char plot[] = "SPP_plot.exe";
+		const char plot[] = "KNZ_Plot.exe";
 		sprintf(path, "%s\\%s", path, plot);
 		
 		cxchar = LOWORD(GetDialogBaseUnits());
@@ -338,16 +303,12 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam){
 						if (obs_h && obs_e && obs_b)
 						{
 							read_o_h(fp_obs, obs_h);
+							ProgressBar(hwndPB, PBSTATENONE, PBSTATEHALF);
 							read_o_b(fp_obs, obs_e, obs_b, obs_h->obstypenum_gps, obs_h->obstypenum_bds);
 						}
 						fclose(fp_obs);
 
-						ProgressBar(hwndPB, 5);
-
-						if (o_epochnum > 0)
-						{
-							MessageBox(hwnd, TEXT("File of Obs load complete!"), TEXT("NOTICE"), MB_ICONASTERISK | MB_OK);
-						}
+						ProgressBar(hwndPB, PBSTATEHALF, PBSTATEFULL);
 					}
 				}
 				else
@@ -366,25 +327,18 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam){
 					if (fp_nav != NULL)
 					{
 						strcpy(nav_f, nav_file);
-						gps_satnum = getgpssatnum(fp_nav);
-						rewind(fp_nav);
-						bds_satnum = getbdssatnum(fp_nav);
+						satnum = getsatnum(fp_nav);
 						rewind(fp_nav);
 						nav_h = (pnav_head)malloc(sizeof(nav_head));
-						nav_b = (pnav_body)malloc(sizeof(nav_body) * (gps_satnum + bds_satnum));
+						nav_b = (pnav_body)malloc(sizeof(nav_body) * (satnum));
 						if (nav_h && nav_b)
 						{
 							read_n_h(fp_nav, nav_h);
+							ProgressBar(hwndPB, PBSTATENONE, PBSTATEHALF);
 							read_n_b(fp_nav, nav_b);
 						}
 						fclose(fp_nav);
-
-						ProgressBar(hwndPB, 1);
-
-						if (gps_satnum > 0)
-						{
-							MessageBox(hwnd, TEXT("File of Nav load complete !"), TEXT("NOTICE"), MB_ICONASTERISK | MB_OK);
-						}
+						ProgressBar(hwndPB, PBSTATEHALF, PBSTATEFULL);
 					}
 				}
 				else
@@ -435,7 +389,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam){
 			case NAVRELOD:
 				if (fp_nav != NULL)
 				{
-					if (gps_satnum > 0)
+					if (satnum > 100)
 					{
 						MessageBox(hwnd, TEXT("File of Nav Reload complete !"), TEXT("NOTICE"), MB_ICONASTERISK | MB_OK);
 						break;
@@ -487,7 +441,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam){
 
 								sat_gps_pos_clac(result_file, hwndPB, 
 									nav_b, obs_e, obs_b, obs_h, 
-									o_epochnum, gps_satnum, 
+									o_epochnum, satnum, 
 									res_file, obs_f, nav_f, 
 									ionoption, trooption);
 

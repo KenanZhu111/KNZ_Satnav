@@ -69,7 +69,7 @@ pos_ts gps_pos(int sPRN, int best_epoch, double GPSsec,
 /* ------------------------------- GPS卫星位置计算&输出 ------------------------------ */
 void sat_gps_pos_clac(FILE* result_file,HWND hwndPB,
     pnav_body nav_b, pobs_epoch obs_e, pobs_body obs_b,pobs_head obs_h,
-    int o_epochnum, int gps_satnum,
+    int o_epochnum, int satnum,
     char res_file[MAX_PATH], char obs_file[MAX_PATH], char nav_file[MAX_PATH],
     int ionoption, int trooption)
 {
@@ -88,7 +88,7 @@ void sat_gps_pos_clac(FILE* result_file,HWND hwndPB,
         result_file = fopen(res_file, "w");
         fclose(result_file);
         result_file = fopen(res_file, "a+");
-        fprintf(result_file, "@ GENERATE PROGRAM   : SPP Calculate v0.4.7\n");
+        fprintf(result_file, "@ GENERATE PROGRAM   : KNZ_Calculate v0.9.7\n");
         fprintf(result_file, "@ GENERATE TYPE      : Satellite  Position\n");
         fprintf(result_file, "@ GENERATE TIME      : %s", ctime(&gen_time));
         fprintf(result_file, "@ OBS FILE PATH      : %s\n", obs_file);
@@ -129,7 +129,7 @@ void sat_gps_pos_clac(FILE* result_file,HWND hwndPB,
             {
                 double GPSsec = Time2GPSsec(y, m, d, h, min, sec);//转换为GPS周内秒
                 int sPRN = obs_e[i].sPRN_GPS[j];
-                int best_epoch = select_epoch(GPSsec, sPRN, nav_b, gps_satnum); //遍历N文件GPS卫星数据块，寻找最佳历元
+                int best_epoch = select_epoch(GPSsec, sPRN, nav_b, satnum, GPS); //遍历N文件GPS卫星数据块，寻找最佳历元
                 double detat_toc = GPSsec - nav_b[best_epoch].TOE;//观测时刻 - 参考时刻
                 //计算近似的信号传播时间,接收机钟差已初始化为0(伪距/光速-接收机钟差+卫星钟差)
                 pos_t.delta_t[sPRN] = (obs_b[i].obs_gps[j][Code2Type(C1C, obs_h->obstypenum_gps, obs_h->obscode_gps)] / C_V) - station.delta_TR + nav_b[best_epoch].sa0 + nav_b[best_epoch].sa1 * detat_toc + nav_b[best_epoch].sa2 * pow(detat_toc, 2);

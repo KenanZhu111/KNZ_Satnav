@@ -1,5 +1,44 @@
 #ifndef _PUBLIC_H_
 #define _PUBLIC_H_
+/*---------------------------------- FOR UI ----------------------------------*/
+//FILE SELECT DIALOGS
+#define FILEEXOP  TEXT("RINEX OBS(*.o*.*.*obs.*.*d)\0*.*o;*.*obs;*.*d\0"\
+					 "All Files(*.*)\0*.*\0\0");
+
+#define FILEEXNP  TEXT("RINEX NAV(*.*nav.*.hnav.*.gnav.*.qnav.*.*n.*.*g.*.*h.*.*q.*.*p)\0*.*nav;*.hnav;*.gnav;*.qnav;*.*n;*.*g;*.*h;*.*q;*.*p\0"\
+					 "All Files(*.*)\0*.*\0\0")
+
+#define FILEEXSV  TEXT("Spos Files(*.sp*)\0*.sp\0"\
+					 "All Files(*.*)\0*.*\0\0");
+
+//DEF MAIN WINDOW BUTTONS
+#define OBSBUTTON	3301
+#define NAVBUTTON	3302
+#define CALBUTTON	3303
+#define OPTBUTTON	3304
+#define PLOBUTTON	3305
+#define OBSCLEAR	3306
+#define OBSRELOD	3307
+#define NAVCLEAR	3308
+#define NAVRELOD	3309
+#define PROGRESS	3310
+//DEF MAIN WINDOW GNSS NUTTONS
+#define GPSCHECK	5500
+#define GLOCHECK	5501
+#define BEICHECK	5502
+#define GALCHECK	5503
+#define SBACHECK	5504
+#define SYSGROUP	1001
+//DEF OPTIONS WINDOW CHECK+BOXS
+#define OPTDFION	7001
+#define OPTDFTRO	7002
+#define OPTCONFI	7003
+
+//DEFINE PROGRESSBAR STATE
+#define PBSTATENONE	0
+#define PBSTATEHALF	500
+#define PBSTATEFULL	1000
+
 
 /* ------------------------------ WGS-84 CONST ------------------------------ */
 #define a       6378137.0
@@ -9,6 +48,8 @@
 #define math_e  2.718281828459
 #define PI      3.141592653589793
 #define Earth_e 7.2921151467e-5
+
+
 /* ----------------------------- GPS OBSERV TYPE ---------------------------- */
 #define C1C      1
 #define C1S      2
@@ -31,6 +72,16 @@
 #define C5I     17
 #define C5Q     18
 #define C5X     19
+
+
+/* ------------------------------- GNSS CODE -------------------------------- */
+#define GPS		 0
+#define BDS		 1
+#define CAL		 2
+#define GLO		 3
+#define SBAS	 4
+
+
 /* ------------------------------ FOR CALMOD.H ------------------------------ */
 #define MAXRINEX 1000
     //卫星位置结构体
