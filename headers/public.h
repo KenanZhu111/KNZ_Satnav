@@ -84,6 +84,8 @@
 
 /* ------------------------------ FOR CALMOD.H ------------------------------ */
 #define MAXRINEX 1000
+#define DAYSEC	 86400
+
     //卫星位置结构体
     typedef struct
     {
@@ -232,6 +234,12 @@ typedef struct obs_head
 	int f_h;
 	int f_min;
 	double f_sec;
+	int l_y;
+	int l_m;
+	int l_d;
+	int l_h;
+	int l_min;
+	double l_sec;
 	char tsys[5];//时间系统
 }obs_head,*pobs_head;
 

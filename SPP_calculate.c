@@ -43,7 +43,7 @@ static int trooption = 0;
 char obs_f[MAX_PATH] = { 0 };
 char nav_f[MAX_PATH] = { 0 };
 
-char  path[MAX_PATH];
+char path[MAX_PATH];
 const wchar_t wpath[MAX_PATH];//PROGRAM'S FOLDER
 
 static void ProgressBar(HWND hwnd, int BEG, int DES)
@@ -52,8 +52,9 @@ static void ProgressBar(HWND hwnd, int BEG, int DES)
 	SendMessage(hwnd, PBM_SETRANGE, (WPARAM)FALSE, (LPARAM)(MAKELPARAM(0, 100)));
 	SendMessage(hwnd, PBM_GETRANGE, (WPARAM)TRUE, (LPARAM)&range);
 	SendMessage(hwnd, PBM_SETPOS, (WPARAM)BEG, (LPARAM)0);
-	for (int i = BEG; i < DES; i++) {
-		SendMessage(hwnd, PBM_SETPOS, (WPARAM)(int)( i / 10), (LPARAM)0);
+	for (int i = 0; i < DES - BEG; i += fabs(DES - BEG)/(DES - BEG)) 
+	{
+		SendMessage(hwnd, PBM_SETPOS, (WPARAM)(int)( i + BEG / 10), (LPARAM)0);
 		if (SendMessage(hwnd, PBM_GETPOS, (WPARAM)0, (LPARAM)0) == range.iHigh * DES/PBSTATEFULL)
 		{
 			break;
@@ -353,6 +354,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam){
 				{
 					free(obs_h); free(obs_e); free(obs_b);
 					fp_obs = NULL; obs_e = NULL; obs_b = NULL;
+					ProgressBar(hwndPB, PBSTATEFULL, PBSTATENONE);
 					while (MessageBox(hwnd, TEXT("File of Obs has been cleared."), TEXT("NOTICE"), MB_ICONASTERISK | MB_OK) == IDOK)
 					{
 						break;
@@ -364,8 +366,9 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam){
 			case OBSRELOD:
 				if (fp_obs != NULL)
 				{
-					if (o_epochnum > 0)
+					if (o_epochnum > 100)
 					{
+						ProgressBar(hwndPB, PBSTATENONE, PBSTATEFULL);
 						MessageBox(hwnd, TEXT("File of Obs Reload complete !"), TEXT("NOTICE"), MB_ICONASTERISK | MB_OK);
 						break;
 					}
@@ -378,6 +381,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam){
 				{
 					free(nav_h); free(nav_b);
 					fp_nav = NULL;nav_h = NULL; nav_b = NULL;
+					ProgressBar(hwndPB, PBSTATEFULL, PBSTATENONE);
 					while (MessageBox(hwnd, TEXT("File of Nav has been cleared."), TEXT("NOTICE"), MB_ICONASTERISK | MB_OK) == IDOK)
 					{
 						break;
@@ -391,6 +395,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam){
 				{
 					if (satnum > 100)
 					{
+						ProgressBar(hwndPB, PBSTATENONE, PBSTATEFULL);
 						MessageBox(hwnd, TEXT("File of Nav Reload complete !"), TEXT("NOTICE"), MB_ICONASTERISK | MB_OK);
 						break;
 					}

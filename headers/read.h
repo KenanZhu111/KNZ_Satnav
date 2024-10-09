@@ -57,6 +57,9 @@ extern int get_epochnum(FILE* fp_obs)
 /* -------------------------------- 读取O文件数据头 -------------------------------- */
 extern void read_o_h(FILE* fp_obs, pobs_head obs_h)
 {
+	obs_h->f_y = obs_h->f_m = obs_h->f_d = obs_h->f_h = obs_h->f_min = obs_h->f_sec = 0;
+	obs_h->l_y = obs_h->l_m = obs_h->l_d = obs_h->l_h = obs_h->l_min = obs_h->l_sec = 0;
+	obs_h->interval = 30;
 	memset(obs_h->obscode_gps, 0, sizeof(obs_h->obscode_gps));
 	memset(obs_h->obscode_bds, 0, sizeof(obs_h->obscode_bds));
 	char buff[MAXRINEX] = { 0 };
@@ -153,6 +156,16 @@ extern void read_o_h(FILE* fp_obs, pobs_head obs_h)
 			obs_h->f_min = (int)strtonum(buff, 2 + 6 + 6 + 6 + 6, 4);
 			obs_h->f_sec = strtonum(buff, 2 + 6 + 6 + 6 + 6 + 6, 9);
 			strncpy(obs_h->tsys, buff + 6 + 6 + 6 + 6 + 6 + 18, 3);
+			continue;
+		}
+		else if (strstr(lable, "TIME OF LAST OBS"))
+		{
+			obs_h->l_y = (int)strtonum(buff, 2, 4);
+			obs_h->l_m = (int)strtonum(buff, 2 + 6, 4);
+			obs_h->l_d = (int)strtonum(buff, 2 + 6 + 6, 4);
+			obs_h->l_h = (int)strtonum(buff, 2 + 6 + 6 + 6, 4);
+			obs_h->l_min = (int)strtonum(buff, 2 + 6 + 6 + 6 + 6, 4);
+			obs_h->l_sec = strtonum(buff, 2 + 6 + 6 + 6 + 6 + 6, 9);
 			continue;
 		}
 		else if (strstr(lable, "END OF HEADER"))

@@ -1,4 +1,4 @@
-##Tro correct
+##Tro correct-Hopfield
 import math
 def def_tro_cor(H, ma):
     P0 = 1013.25

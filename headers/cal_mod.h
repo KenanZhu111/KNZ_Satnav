@@ -93,6 +93,10 @@ void sat_gps_pos_clac(FILE* result_file,HWND hwndPB,
         fprintf(result_file, "@ GENERATE TIME      : %s", ctime(&gen_time));
         fprintf(result_file, "@ OBS FILE PATH      : %s\n", obs_file);
         fprintf(result_file, "@ NAV FILE PATH      : %s\n", nav_file);
+        fprintf(result_file, "@ TIME OF FIRST OBS  : %4d %02d %02d %02d %02d %07.4f\n"
+            , obs_h->f_y, obs_h->f_m, obs_h->f_d, obs_h->f_h, obs_h->f_min, obs_h->f_sec);
+        fprintf(result_file, "@ TIME OF LAST OBS   : %4d %02d %02d %02d %02d %07.4f\n"
+            , obs_h->l_y, obs_h->l_m, obs_h->l_d, obs_h->l_h, obs_h->l_min, obs_h->l_sec);
         fprintf(result_file, "@ APPROX POSITION XYZ: %13.04f%13.04f%13.04f\n@ APPROX POSITION BLH:  %12.07f %12.07f %12.07f\n"
             , obs_h->apX, obs_h->apY, obs_h->apZ
             , station.B, station.L, station.H);
@@ -102,12 +106,11 @@ void sat_gps_pos_clac(FILE* result_file,HWND hwndPB,
         if (trooption == 1) { fprintf(result_file, "@ TROPO OPT          : DEFAULT\n@\n\n"); }
         fclose(result_file);
 
+        double beginsec = Time2GPSsec(obs_h->f_y, obs_h->f_m, obs_h->f_d, obs_h->f_h, obs_h->f_min, obs_h->f_sec);
+        double endinsec = Time2GPSsec(obs_h->l_y, obs_h->l_m, obs_h->l_d, obs_h->l_h, obs_h->l_min, obs_h->l_sec);
+
         for (int i = 0; i < o_epochnum; i++)
         {
-            result_file = fopen(res_file, "a+");
-            fprintf(result_file, "\n>%04d %04d %02d %02d %02d %02d %07.04f", i + 1, obs_e[i].y, obs_e[i].m, obs_e[i].d, obs_e[i].h, obs_e[i].min, obs_e[i].sec);
-            fclose(result_file);
-
             int y = obs_e[i].y;
             int m = obs_e[i].m;
             int d = obs_e[i].d;
@@ -125,9 +128,17 @@ void sat_gps_pos_clac(FILE* result_file,HWND hwndPB,
             enus enu = { 0 };
             rahs rah = { 0 };
             pos_ts pos_t = { 0 };
+
+            double GPSsec = Time2GPSsec(y, m, d, h, min, sec);//转换为GPS周内秒
+            int epochsignal = round((GPSsec - beginsec) / obs_h->interval) + 1;
+
+            result_file = fopen(res_file, "a+");
+            fprintf(result_file, "\n>%04d %04d %02d %02d %02d %02d %07.04f"
+                , epochsignal, obs_e[i].y, obs_e[i].m, obs_e[i].d, obs_e[i].h, obs_e[i].min, obs_e[i].sec);
+            fclose(result_file);
+
             for (int j = 0; j < obs_e[i].gps_num; j++)//第j颗GPS卫星
             {
-                double GPSsec = Time2GPSsec(y, m, d, h, min, sec);//转换为GPS周内秒
                 int sPRN = obs_e[i].sPRN_GPS[j];
                 int best_epoch = select_epoch(GPSsec, sPRN, nav_b, satnum, GPS); //遍历N文件GPS卫星数据块，寻找最佳历元
                 double detat_toc = GPSsec - nav_b[best_epoch].TOE;//观测时刻 - 参考时刻
