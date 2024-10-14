@@ -1,6 +1,6 @@
 # **MAIN FUNCTION INTRODUCTION**
 
-* Reads the RINEX of version 3.04 of observation data and navigation data.
+* Read the RINEX of version 3.04 of observation data and navigation data.
 * Calculate the coordinates of each epoch of the satellite in the ECEF coordinate system (.sp file).[ADIN 2024/10/5]
 * With the help of KNZ_Plot, the coordinates of the station can be calculated. And draw the image.[ADIN 2024/10/5]
 * Until October 14, 2024, it is possible to calculate and output the satellite coordinates of the GPS & BeiDou & Galileo satellite system with KNZ_Calculate. With KNZ_Plot, pseudo-range single point positioning of GPS & Galileo satellite systems can be performed.[ADIN 2024/10/14]  
@@ -32,8 +32,8 @@
 2. KNZ_Plot: more selective options and more united style of GUI.
 
 ### Rename the Project: 2024/10/08
-1.Update KNZ_Plot.
-2.Update mpre GUI parts.
+1. Update KNZ_Plot.
+2. Update more GUI parts.
 
 ### Update: 2024/10/06
 1. SPP_Plot: Realize the file view function.
