@@ -12,14 +12,13 @@ typedef struct
     double A;
     double H;
 }rahcal;
-
 /* -------------------------------------------------------------------------- */
-/// @brief 计算站心坐标系下的卫星高度方位角
-/// @param rahcal 自定义结构体变量用于传参
-/// @param E 站心坐标东
-/// @param N 站心坐标北
-/// @param U 站心坐标天
-/// @return 返回自定义结构体变量包含R, A, H成员                        
+/// @brief satellite azimuth angle calculation
+/// @param rahcal parameter transfer structure
+/// @param E east
+/// @param N north
+/// @param U up
+/// @return return structure contain R, A, H members                      
 /* -------------------------------------------------------------------------- */
 rahcal RAHCAL(rahcal rahcal, 
               double E, double N, double U)

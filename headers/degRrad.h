@@ -2,11 +2,10 @@
 #define _DEGRRAD_H_
 
 #include"public.h"
-
 /* -------------------------------------------------------------------------- */
-/// @brief 角度转弧度
+/// @brief degree to radian
 /// @param deg 
-/// @return 返回弧度
+/// @return return radian
 /* -------------------------------------------------------------------------- */
 double deg2rad(double deg)
 {
@@ -15,9 +14,9 @@ double deg2rad(double deg)
 }
 
 /* -------------------------------------------------------------------------- */
-/// @brief 弧度转角度                       
+/// @brief radian to degree                      
 /// @param rad 
-/// @return 返回角度
+/// @return return degree
 /* -------------------------------------------------------------------------- */
 double rad2deg(double rad)
 {

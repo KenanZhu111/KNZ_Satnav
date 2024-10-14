@@ -10,16 +10,15 @@ typedef struct
    double N;
    double U;
 }blh2enu;
-
 /* -------------------------------------------------------------------------- */
-/// @brief 将大地高坐标转换为站心坐标
-/// @param blh2enu 自定义结构体类型用来传参
-/// @param stationB 站心纬度
-/// @param stationL 站心经度
-/// @param deltax 卫星到站心的x坐标差值
-/// @param deltay 卫星到站心的y坐标差值
-/// @param deltaz 卫星到站心的z坐标差值
-/// @return 返回自定义结构体类型包含E, N, U成员
+/// @brief convert BLH coordinates to ENU coordinates
+/// @param blh2enu parameter transfer structure
+/// @param stationB latitude of receiver station
+/// @param stationL longitude of receiver station
+/// @param deltax X-coordinate difference of satellite arrival center
+/// @param deltay Y-coordinate difference of satellite arrival center
+/// @param deltaz Z-coordinate difference of satellite arrival center
+/// @return return type of structure contain E, N, U members
 /* -------------------------------------------------------------------------- */
 blh2enu BLH2ENU(blh2enu blh2enu, 
                 double stationB, double stationL,

@@ -46,7 +46,7 @@ char nav_f[MAX_PATH] = { 0 };
 char path[MAX_PATH];
 const wchar_t wpath[MAX_PATH];//PROGRAM'S FOLDER
 
-static void ProgressBar(HWND hwnd, int BEG, int DES)
+static void ProgressBar(HWND hwnd, int BEG, int DES)//PROGRESS BAR FUNCTION
 {
 	PBRANGE range;
 	SendMessage(hwnd, PBM_SETRANGE, (WPARAM)FALSE, (LPARAM)(MAKELPARAM(0, 100)));
@@ -200,6 +200,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam){
 	TCHAR* SATSYS[5] = { TEXT("GPS"),TEXT("GLO"),TEXT("BeiDou"),TEXT("Galileo"),TEXT("SBAS") };
 	static HWND hwndPB;
 	static int cxchar, cychar;
+	static int gnssencode;//GNSS SET STATE CODE
 
 	switch (msg) {
 	
@@ -216,8 +217,8 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam){
 
 		InitCommonControls();
 		hwndPB = CreateWindowEx(0, PROGRESS_CLASS, NULL, WS_CHILD | WS_VISIBLE,
-			0.5 * cxchar, 12.25 * cychar,
-			47 * cxchar, 1 * cychar,
+			0.5 * cxchar, 12.5 * cychar,
+			 47 * cxchar, 3 * cychar/4,
 			hwnd, (HMENU)PROGRESS, ((LPCREATESTRUCT)lParam)->hInstance, NULL);
 
 		//CREATE THE BUTTONS
@@ -305,7 +306,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam){
 						{
 							read_o_h(fp_obs, obs_h);
 							ProgressBar(hwndPB, PBSTATENONE, PBSTATEHALF);
-							read_o_b(fp_obs, obs_e, obs_b, obs_h->obstypenum_gps, obs_h->obstypenum_bds);
+							read_o_b(fp_obs, obs_e, obs_b, obs_h);
 						}
 						fclose(fp_obs);
 
@@ -421,37 +422,29 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam){
 					int ALLSTATE = 0x0000;
 					for (int i = 0; i < 5; i++){ALLSTATE += SendMessage(hwndb[i + 5], BM_GETCHECK, wParam, lParam);}
 					if (ALLSTATE == 0x0000)
-					{
-						while (MessageBox(hwnd, TEXT("No GNSS is choosen\nPlease Retry"), TEXT("STOP"), MB_ICONERROR | MB_RETRYCANCEL) == IDRETRY)
+					{	while (MessageBox(hwnd, TEXT("No GNSS is choosen\nPlease Retry"), TEXT("STOP"), MB_ICONERROR | MB_RETRYCANCEL) == IDRETRY)
 						{
-								break;
-						}
-						
-					}
+								break;}}
+
 					else
-					{
-						FileSaveDialog(wres_file);
+					{	FileSaveDialog(wres_file);
 						wcstombs(res_file, wres_file, MAX_PATH);
 						if (res_file[0] == '\0')
-						{
-							while (MessageBox(hwnd, TEXT("Failed to select a save path.\nThe data has been cleared !"), TEXT("WARNING"), MB_ICONWARNING | MB_OK) == IDOK)
-							{
-								break;
-							}
-						}
+						{	while (MessageBox(hwnd, TEXT("Failed to select a save path.\nThe data has been cleared !"), TEXT("WARNING"), MB_ICONWARNING | MB_OK) == IDOK)
+							{	break;}}
+
 						else
-						{
-							if (SendMessage(hwndb[5], BM_GETCHECK, wParam, lParam) == BST_CHECKED)
-							{
+						{	gnssencode = pow(GPS,  SendMessage(hwndb[5], BM_GETCHECK, wParam, lParam))
+									   * pow(GLO,  SendMessage(hwndb[6], BM_GETCHECK, wParam, lParam))
+									   * pow(BDS,  SendMessage(hwndb[7], BM_GETCHECK, wParam, lParam))
+									   * pow(GAL,  SendMessage(hwndb[8], BM_GETCHECK, wParam, lParam))
+									   * pow(SBAS, SendMessage(hwndb[9], BM_GETCHECK, wParam, lParam));
 
-								sat_gps_pos_clac(result_file, hwndPB, 
+								sat_pos_clac(result_file, hwndPB, 
 									nav_b, obs_e, obs_b, obs_h, 
-									o_epochnum, satnum, 
+									o_epochnum, satnum, gnssencode, 
 									res_file, obs_f, nav_f, 
-									ionoption, trooption);
-
-							}
-									
+									ionoption, trooption);		
 						}
 						free(obs_h); free(obs_e); free(obs_b); free(nav_h); free(nav_b);
 						fp_nav = NULL; fp_obs = NULL; result_file = NULL;

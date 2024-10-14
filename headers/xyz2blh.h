@@ -12,16 +12,15 @@ typedef struct
   double L;
   double H;  
 }xyz2blh;
-
 /* -------------------------------------------------------------------------- */
-/// @brief 将ECEF地心地固坐标转换为经纬高坐标
-/// @param xyz2blh 自定义结构体类型，用来传参
-/// @param X ECEF的X坐标
-/// @param Y ECEF的Y坐标
-/// @param Z ECEF的Z坐标
-/// @param a 椭球的长半轴
-/// @param e2 椭球的第一偏心率平方
-/// @return 返回自定义结构体类型包含B，L，H成员
+/// @brief Convert ECEF geostationary coordinates to BLH coordinates
+/// @param xyz2blh parameter transfer structure
+/// @param X X coordinates of ECEF
+/// @param Y Y coordinates of ECEF
+/// @param Z Z coordinates of ECEF
+/// @param a major semiaxis of WGS-84 ellipsoid
+/// @param e2 the square of the first eccentricity of WGS-84 ellipsoid
+/// @return return type of structure contain B, L, H members
 /* -------------------------------------------------------------------------- */
 xyz2blh XYZ2BLH(xyz2blh xyz2blh, 
                   double X, double Y, double Z)
@@ -30,15 +29,13 @@ xyz2blh XYZ2BLH(xyz2blh xyz2blh,
     double B = 0.0, N = 0.0, H = 0.0, R0, R1, deltaH, deltaB;
     R0 = sqrt(pow(X, 2) + pow(Y, 2));
     R1 = sqrt(pow(X, 2) + pow(Y, 2) + pow(Z, 2));
-    //经度直接求解
     xyz2blh.L = atan2(Y, X);
-    //迭代求大地维度和大地高
     N = a;
     H = R1 - a;
     B = atan2(Z * (N + H), R0 * (N * (1 - e2) + H));
     do
     {
-        deltaH = N;//判断收敛所用
+        deltaH = N;
         deltaB = B;
 		N = a / sqrt(1 - e2 * pow(sin(B), 2));
 		H = R0 / cos(B) - N;
