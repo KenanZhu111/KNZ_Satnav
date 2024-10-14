@@ -23,43 +23,43 @@
   * The format of the (.po file) is described in detail in the help documentation.
 ## Project Update
 
-#Update: 2024/10/14
+### Update: 2024/10/14
 1. KNZ_Calculate: be able to calculate the sat pos of GPS & BDS & Galileo.
 2. KNZ_Plot: be able to Single postiting by GPS & Galileo.
 
-#Update: 2024/10/09
+### Update: 2024/10/09
 1. KNZ_Calculate: modified some mistake and optimize the use experience.
 2. KNZ_Plot: more selective options and more united style of GUI.
 
-#Rename the Project: 2024/10/08
+### Rename the Project: 2024/10/08
 1.Update KNZ_Plot.
 2.Update mpre GUI parts.
 
-#Update: 2024/10/06
+### Update: 2024/10/06
 1. SPP_Plot: Realize the file view function.
 2. SPP_Plot: Realize the color select Optimized operation experience.
 
-#Big Update: 2024/10/05
+### Big Update: 2024/10/05
 1. Realize the full gui program.
 2. Complete the plot function.
 
-#Update: 2024/09/28
+### Update: 2024/09/28
 1. Implement GUI by WIN32 API.
 2. Optimize code structure.
 
-#Update: 2024/09/26
+### Update: 2024/09/26
 1. Fix some bug.
 2. Optimize code structure.
 
-#Update: 2024/09/23
+### Update: 2024/09/23
 1. Modify some crash.
 2. Fix some bug.
 
-#Update: 2024/09/22
+### Update: 2024/09/22
 1. Modify UI.
 2. Fix some bug.
 
-#Big Update: 2024/09/21
+### Big Update: 2024/09/21
 1. Correct some mistake.
 2. Optimize code structure.
 3. Improve the function and operation logic of software input and output.
@@ -70,7 +70,7 @@
 -deg2dms.h
 -degRrad.h
 
-#Update: 2024/09/20
+### Update: 2024/09/20
 1. Correct some mistake.
 2. Optimize code structure.
 
